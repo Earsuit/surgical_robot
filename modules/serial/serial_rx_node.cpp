@@ -32,26 +32,24 @@ int main(int argc, char** argv){
 
     surgical_robot::motor_feedback msg;
     msg.motor_1 = msg.motor_2 = msg.motor_3 = msg.motor_4 =0;
-    unsigned int count = 0;
 
     while(ros::ok()){
         serial.flush();
         int numOfBytes = serial.read(buffer,BUFFER_SIZE);
         ROS_DEBUG("Received: %d",numOfBytes);
         int index = findPackage(buffer,numOfBytes);
-        ROS_DEBUG("Index: %d",index);
         int sizef = sizeof(float);
         if(index!=NOT_FOUND){
             memcpy(&msg.motor_1,&buffer[index],sizef);
             memcpy(&msg.motor_2,&buffer[index+sizef],sizef);
             memcpy(&msg.motor_3,&buffer[index+sizef*2],sizef);
             memcpy(&msg.motor_4,&buffer[index+sizef*3],sizef);
-        }
+        }else
+            ROS_WARN("Package not found!");
         ROS_INFO("%f, %f, %f, %f",msg.motor_1,msg.motor_2,msg.motor_3,msg.motor_4);
         motor_feedback_pub.publish(msg);
         ros::spinOnce();
         loop_rate.sleep();
-        count++;
     }
     return 0;
 }
