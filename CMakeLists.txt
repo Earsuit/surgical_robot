@@ -51,8 +51,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  motor_angles.msg
+  motor_commands.msg
   end_effector_pos.msg
+  motor_feedback.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -199,3 +200,5 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+add_subdirectory(modules)
