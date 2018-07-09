@@ -18,7 +18,7 @@
 int findPackage(uint8_t* buffer,int size);
 
 int main(int argc, char** argv){
-    ros::init(argc,argv,"serial_rx");
+    ros::init(argc,argv,"serial");
     ros::NodeHandle n;
     ros::Publisher motor_feedback_pub = n.advertise<surgical_robot::motor_feedback>("motor_feedback",1000);
     int rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
@@ -43,7 +43,7 @@ int main(int argc, char** argv){
             memcpy(&msg.motor_1,&buffer[index],sizef);
             memcpy(&msg.motor_2,&buffer[index+sizef],sizef);
             memcpy(&msg.motor_3,&buffer[index+sizef*2],sizef);
-            memcpy(&msg.motor_4,&buffer[index+sizef*3],sizef);
+            memcpy(&msg.motor_4,&buffer[index+sizef*3],sizef); 
         }else
             ROS_WARN("Package not found!");
         ROS_INFO("%f, %f, %f, %f",msg.motor_1,msg.motor_2,msg.motor_3,msg.motor_4);
