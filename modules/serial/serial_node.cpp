@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <cstring>
 
-#define DEFAULT_RATE 100
+#define DEFAULT_RATE 20
 #define BUFFER_SIZE 35
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
@@ -27,7 +27,7 @@ int main(int argc, char** argv){
 
     //start serial comunication
     MiniSerial serial(argv[0]);
-    serial.begin(230400);
+    serial.begin(115200);
     uint8_t buffer[BUFFER_SIZE];
 
     surgical_robot::motor_feedback msg;
