@@ -6,9 +6,12 @@
 #include "MiniSerial.h"
 #include <stdint.h>
 #include <cstring>
+#include <boost/bind.hpp>
+#include <boost/ref.hpp>
 
 #define DEFAULT_RATE 20
-#define BUFFER_SIZE 35
+#define RX_BUFFER_SIZE 35
+#define TX_BUFFER_SIZE 18
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
 #define PACKAGE_LEN 18
@@ -16,26 +19,36 @@
 #define RATE_LOWER_LIMIT 1
 
 int findPackage(uint8_t* buffer,int size);
+void commandCallback(MiniSerial &serial,const surgical_robot::motor_commands &msg);
 
 int main(int argc, char** argv){
     ros::init(argc,argv,"serial");
     ros::NodeHandle n;
-    ros::Publisher motor_feedback_pub = n.advertise<surgical_robot::motor_feedback>("motor_feedback",1000);
-    int rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
-    rate = rate>0?rate:RATE_LOWER_LIMIT;
-    ros::Rate loop_rate(rate);
 
     //start serial comunication
     MiniSerial serial(argv[0]);
     serial.begin(115200);
-    uint8_t buffer[BUFFER_SIZE];
+    uint8_t buffer[RX_BUFFER_SIZE];
+
+    //publisher
+    ros::Publisher motor_feedback_pub = n.advertise<surgical_robot::motor_feedback>("motor_feedback",1000);
+    //subscriber
+    boost::bind(commandCallback,boost::ref(serial),_1);
+    ros::Subscriber motor_command_pub = n.subscribe("motor_command",1000,);
+
+    //loop rate
+    int rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
+    rate = rate>0?rate:RATE_LOWER_LIMIT;
+    ros::Rate loop_rate(rate);
+    
+    
 
     surgical_robot::motor_feedback msg;
     msg.motor_1 = msg.motor_2 = msg.motor_3 = msg.motor_4 =0;
 
     while(ros::ok()){
         serial.flush();
-        int numOfBytes = serial.read(buffer,BUFFER_SIZE);
+        int numOfBytes = serial.read(buffer,RX_BUFFER_SIZE);
         ROS_DEBUG("Received: %d",numOfBytes);
         int index = findPackage(buffer,numOfBytes);
         int sizef = sizeof(float);
@@ -64,4 +77,17 @@ int findPackage(uint8_t* buffer,int size){
         }
     }
     return NOT_FOUND;
+}
+
+void commandCallback(MiniSerial &serial,const surgical_robot::motor_commands &msg){
+    ROS_INFO("Commands received: %f, %f, %f, %f", msg.motor_1,msg.motor_2,msg.motor_3,msg.motor_4);
+    uint8_t buffer[TX_BUFFER_SIZE];
+    int sizef = sizeof(float);
+    buffer[0] = PACKAGE_HEAD;
+    memcpy(buffer+1,&msg.motor_1,sizef);
+    memcpy(buffer+1+sizef,&msg.motor_2,sizef);
+    memcpy(buffer+1+sizef*2,&msg.motor_3,sizef);
+    memcpy(buffer+1+sizef*3,&msg.motor_4,sizef); 
+    buffer[TX_BUFFER_SIZE-1] = PACKAGE_TAIL;
+    serial.write(buffer,TX_BUFFER_SIZE);
 }
