@@ -1,14 +1,14 @@
 #include "ros/ros.h"
 #include <ros/console.h>
-#include "surgical_robot/motor_feedback.h"
-#include "surgical_robot/motor_commands.h"
 #include <sstream>
 #include <cstdlib>
-#include "MiniSerial.h"
 #include <stdint.h>
 #include <cstring>
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
+#include "surgical_robot/motor_feedback.h"
+#include "surgical_robot/motor_commands.h"
+#include "MiniSerial.h"
 
 #define DEFAULT_RATE 20
 #define RX_BUFFER_SIZE 35
@@ -52,10 +52,7 @@ int main(int argc, char** argv){
         int index = findPackage(buffer,numOfBytes);
         int sizef = sizeof(float);
         if(index!=NOT_FOUND){
-            memcpy(&msg.motor_1,&buffer[index],sizef);
-            memcpy(&msg.motor_2,&buffer[index+sizef],sizef);
-            memcpy(&msg.motor_3,&buffer[index+sizef*2],sizef);
-            memcpy(&msg.motor_4,&buffer[index+sizef*3],sizef); 
+            memcpy(&msg.motor_1,buffer+index,4*sizef);
         }else
             ROS_WARN("Package not found!");
         ROS_INFO("%f, %f, %f, %f",msg.motor_1,msg.motor_2,msg.motor_3,msg.motor_4);
@@ -83,10 +80,7 @@ void commandCallback(MiniSerial &serial,const surgical_robot::motor_commandsCons
     uint8_t buffer[TX_BUFFER_SIZE];
     int sizef = sizeof(float);
     buffer[0] = PACKAGE_HEAD;
-    memcpy(buffer+1,&msg->motor_1,sizef);
-    memcpy(buffer+1+sizef,&msg->motor_2,sizef);
-    memcpy(buffer+1+sizef*2,&msg->motor_3,sizef);
-    memcpy(buffer+1+sizef*3,&msg->motor_4,sizef); 
+    memcpy(buffer+1,&msg->motor_1,4*sizef);
     buffer[TX_BUFFER_SIZE-1] = PACKAGE_TAIL;
     serial.write(buffer,TX_BUFFER_SIZE);
 }
