@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include <ros/console.h>
 #include "surgical_robot/motor_feedback.h"
+#include "surgical_robot/motor_commands.h"
 #include <sstream>
 #include <cstdlib>
 #include "MiniSerial.h"
@@ -19,7 +20,8 @@
 #define RATE_LOWER_LIMIT 1
 
 int findPackage(uint8_t* buffer,int size);
-void commandCallback(MiniSerial &serial,const surgical_robot::motor_commands &msg);
+void commandCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &);
+typedef const boost::function<void(const surgical_robot::motor_commandsConstPtr & )> callback;
 
 int main(int argc, char** argv){
     ros::init(argc,argv,"serial");
@@ -32,19 +34,16 @@ int main(int argc, char** argv){
 
     //publisher
     ros::Publisher motor_feedback_pub = n.advertise<surgical_robot::motor_feedback>("motor_feedback",1000);
+    surgical_robot::motor_feedback msg;
+    msg.motor_1 = msg.motor_2 = msg.motor_3 = msg.motor_4 =0;
     //subscriber
-    boost::bind(commandCallback,boost::ref(serial),_1);
-    ros::Subscriber motor_command_pub = n.subscribe("motor_command",1000,);
+    callback sub_callback = boost::bind(commandCallback,boost::ref(serial),_1);
+    ros::Subscriber motor_command_pub = n.subscribe("motor_command",1000,sub_callback);
 
     //loop rate
     int rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
     rate = rate>0?rate:RATE_LOWER_LIMIT;
     ros::Rate loop_rate(rate);
-    
-    
-
-    surgical_robot::motor_feedback msg;
-    msg.motor_1 = msg.motor_2 = msg.motor_3 = msg.motor_4 =0;
 
     while(ros::ok()){
         serial.flush();
@@ -79,15 +78,15 @@ int findPackage(uint8_t* buffer,int size){
     return NOT_FOUND;
 }
 
-void commandCallback(MiniSerial &serial,const surgical_robot::motor_commands &msg){
-    ROS_INFO("Commands received: %f, %f, %f, %f", msg.motor_1,msg.motor_2,msg.motor_3,msg.motor_4);
+void commandCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &msg){
+    ROS_INFO("Commands received: %f, %f, %f, %f", msg->motor_1,msg->motor_2,msg->motor_3,msg->motor_4);
     uint8_t buffer[TX_BUFFER_SIZE];
     int sizef = sizeof(float);
     buffer[0] = PACKAGE_HEAD;
-    memcpy(buffer+1,&msg.motor_1,sizef);
-    memcpy(buffer+1+sizef,&msg.motor_2,sizef);
-    memcpy(buffer+1+sizef*2,&msg.motor_3,sizef);
-    memcpy(buffer+1+sizef*3,&msg.motor_4,sizef); 
+    memcpy(buffer+1,&msg->motor_1,sizef);
+    memcpy(buffer+1+sizef,&msg->motor_2,sizef);
+    memcpy(buffer+1+sizef*2,&msg->motor_3,sizef);
+    memcpy(buffer+1+sizef*3,&msg->motor_4,sizef); 
     buffer[TX_BUFFER_SIZE-1] = PACKAGE_TAIL;
     serial.write(buffer,TX_BUFFER_SIZE);
 }
