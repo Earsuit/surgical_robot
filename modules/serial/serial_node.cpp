@@ -79,7 +79,6 @@ void commandCallback(MiniSerial &serial,const surgical_robot::motor_commandsCons
     ROS_INFO("Commands received: %d, %d, %d, %d", msg->motor_1,msg->motor_2,msg->motor_3,msg->motor_4);
     uint8_t buffer[TX_BUFFER_SIZE];
     int sizef = sizeof(msg->motor_1);
-    ROS_INFO("Size: %d",sizef);
     buffer[0] = PACKAGE_HEAD;
     memcpy(buffer+1,&msg->motor_1,4*sizef);
     buffer[TX_BUFFER_SIZE-1] = PACKAGE_TAIL;
