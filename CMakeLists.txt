@@ -54,6 +54,7 @@ add_message_files(
   motor_commands.msg
   end_effector_pos.msg
   motor_feedback.msg
+  system_identification.msg
 )
 
 ## Generate services in the 'srv' folder

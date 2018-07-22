@@ -1,0 +1,3 @@
+float32 motor_angle
+float32 current
+float32 voltage
