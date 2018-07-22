@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include <cstring>
 
-#define PACKAGE_LEN 18
+#define PACKAGE_LEN 6
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
 #define NOT_FOUND -1
-#define BUFFER_SIZE 35
+#define BUFFER_SIZE 11
 
 typedef union Data{
 	uint8_t b[4];
@@ -15,8 +15,7 @@ typedef union Data{
 uint8_t buffer[BUFFER_SIZE];
 
 data a[4];
-data b[4];
-
+uint8_t b[4];
 
 void setup(){
 	Serial.begin(115200);
@@ -24,7 +23,6 @@ void setup(){
 	Serial1.setTimeout(10);
 	for(int i=0;i<4;i++){
 		a[i].f = 0;
-		b[i].f = 0;
 	}
 }
 
@@ -41,14 +39,14 @@ void loop(){
 	int num = Serial1.readBytes(buffer,BUFFER_SIZE);
 	int index = findPackage(buffer,num);
 	if(index!=NOT_FOUND){
-		memcpy(b,buffer+index,16);
-		Serial.print(b[0].f);
+		memcpy(b,buffer+index,4);
+		Serial.print(b[0]);
 		Serial.print(" ");
-		Serial.print(b[1].f);
+		Serial.print(b[1]);
 		Serial.print(" ");
-		Serial.print(b[2].f);
+		Serial.print(b[2]);
 		Serial.print(" ");
-		Serial.println(b[3].f);
+		Serial.println(b[3]);
 	}
 }
 
