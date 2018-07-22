@@ -69,7 +69,6 @@ int findPackage(uint8_t* buffer,int size){
 }
 
 void subscriberCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &msg){
-    ROS_INFO("Commands received: %d", msg->motor_1);
     uint8_t buffer[TX_BUFFER_SIZE];
     int sizef = sizeof(msg->motor_1);
     buffer[0] = PACKAGE_HEAD;
@@ -88,6 +87,7 @@ void publisherCallback(MiniSerial& serial,uint8_t* buffer,ros::Publisher& pub,su
         memcpy(&msg.motor_angle,buffer+index,3*sizef);
     }else
         ROS_WARN("Package not found!");
-    ROS_INFO("%f, %f, %f",msg.motor_angle,msg.current,msg.voltage);
+
+    ROS_INFO("%0.3f, %0.3f, %0.3f",msg.motor_angle,msg.current,msg.voltage);
     pub.publish(msg);
 }
