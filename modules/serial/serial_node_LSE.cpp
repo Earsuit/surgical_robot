@@ -21,8 +21,11 @@
 #define RATE_LOWER_LIMIT 1
 
 int findPackage(uint8_t* buffer,int size);
-void commandCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &);
-typedef const boost::function<void(const surgical_robot::motor_commandsConstPtr & )> callback;
+void subscriberCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &);
+typedef const boost::function<void(const surgical_robot::motor_commandsConstPtr & )> sub_callback;
+
+void publisherCallback(MiniSerial&,uint8_t*,ros::Publisher&,surgical_robot::system_identification &,const ros::TimerEvent&);
+typedef const boost::function<void(const ros::TimerEvent&)> pub_callback;
 
 int main(int argc, char** argv){
     ros::init(argc,argv,"serial");
@@ -34,34 +37,22 @@ int main(int argc, char** argv){
     serial.begin(baudRate);
     uint8_t buffer[RX_BUFFER_SIZE];
 
+    //loop rate
+    float rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
+    rate = 1/(rate>0?rate:RATE_LOWER_LIMIT);
+
     //publisher
     ros::Publisher system_identification_pub = n.advertise<surgical_robot::system_identification>("system_identification",1000);
     surgical_robot::system_identification msg;
     msg.motor_angle = msg.current = msg.voltage = 0;
+    pub_callback publisher_callback =  boost::bind(publisherCallback,boost::ref(serial),buffer,boost::ref(system_identification_pub),boost::ref(msg),_1);
+    ros::Timer timer = n.createTimer(ros::Duration(rate),publisher_callback);
+    
     //subscriber
-    callback sub_callback = boost::bind(commandCallback,boost::ref(serial),_1);
-    ros::Subscriber motor_command_pub = n.subscribe("motor_command",1000,sub_callback);
+    sub_callback subscriber_callback = boost::bind(subscriberCallback,boost::ref(serial),_1);
+    ros::Subscriber motor_command_pub = n.subscribe("motor_command",1000,subscriber_callback);
 
-    //loop rate
-    int rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
-    rate = rate>0?rate:RATE_LOWER_LIMIT;
-    ros::Rate loop_rate(rate);
-
-    while(ros::ok()){
-        serial.flush();
-        int numOfBytes = serial.read(buffer,RX_BUFFER_SIZE);
-        ROS_DEBUG("Received: %d",numOfBytes);
-        int index = findPackage(buffer,numOfBytes);
-        int sizef = sizeof(msg.motor_angle);
-        if(index!=NOT_FOUND){
-            memcpy(&msg.motor_angle,buffer+index,3*sizef);
-        }else
-            ROS_WARN("Package not found!");
-        ROS_INFO("%f, %f, %f",msg.motor_angle,msg.current,msg.voltage);
-        system_identification_pub.publish(msg);
-        ros::spinOnce();    
-        loop_rate.sleep();
-    }
+    ros::spin();
     return 0;
 }
 
@@ -77,7 +68,7 @@ int findPackage(uint8_t* buffer,int size){
     return NOT_FOUND;
 }
 
-void commandCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &msg){
+void subscriberCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &msg){
     ROS_INFO("Commands received: %d", msg->motor_1);
     uint8_t buffer[TX_BUFFER_SIZE];
     int sizef = sizeof(msg->motor_1);
@@ -85,4 +76,18 @@ void commandCallback(MiniSerial &serial,const surgical_robot::motor_commandsCons
     buffer[1] = msg->motor_1;
     buffer[2] = PACKAGE_TAIL;
     serial.write(buffer,TX_BUFFER_SIZE);
+}
+
+void publisherCallback(MiniSerial& serial,uint8_t* buffer,ros::Publisher& pub,surgical_robot::system_identification & msg,const ros::TimerEvent& timer){
+    serial.flush();
+    int numOfBytes = serial.read(buffer,RX_BUFFER_SIZE);
+    ROS_DEBUG("Received: %d",numOfBytes);
+    int index = findPackage(buffer,numOfBytes);
+    int sizef = sizeof(msg.motor_angle);
+    if(index!=NOT_FOUND){
+        memcpy(&msg.motor_angle,buffer+index,3*sizef);
+    }else
+        ROS_WARN("Package not found!");
+    ROS_INFO("%f, %f, %f",msg.motor_angle,msg.current,msg.voltage);
+    pub.publish(msg);
 }
