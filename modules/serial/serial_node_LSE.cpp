@@ -50,7 +50,7 @@ int main(int argc, char** argv){
     
     //subscriber
     sub_callback subscriber_callback = boost::bind(subscriberCallback,boost::ref(serial),_1);
-    ros::Subscriber motor_command_pub = n.subscribe("motor_command",1000,subscriber_callback);
+    ros::Subscriber motor_command_sub = n.subscribe("motor_command",1000,subscriber_callback);
 
     ros::spin();
     return 0;
