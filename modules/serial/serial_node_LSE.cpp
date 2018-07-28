@@ -19,6 +19,7 @@
 #define RX_PACKAGE_LEN 14
 #define NOT_FOUND -1
 #define RATE_LOWER_LIMIT 1
+#define SYSTEM_IDENTIFICATION_LENGTH 3 
 
 int findPackage(uint8_t* buffer,int size);
 void subscriberCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &);
@@ -35,7 +36,7 @@ int main(int argc, char** argv){
 
     //loop rate
     float rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
-    rate = 1/(rate>0?rate:RATE_LOWER_LIMIT);
+    rate = 1.0/(rate>0?rate:RATE_LOWER_LIMIT);
 
     //start serial comunication
     MiniSerial serial(argv[0]);
@@ -54,7 +55,10 @@ int main(int argc, char** argv){
     sub_callback subscriber_callback = boost::bind(subscriberCallback,boost::ref(serial),_1);
     ros::Subscriber motor_command_sub = n.subscribe("motor_command",1000,subscriber_callback);
 
-    ros::spin();
+    //using two threads 
+    ros::AsyncSpinner s(2);
+    s.start();
+    ros::waitForShutdown();
     return 0;
 }
 
@@ -80,7 +84,7 @@ void subscriberCallback(MiniSerial &serial,const surgical_robot::motor_commandsC
     buffer[2] = msg->motor_1_dir;
     buffer[3] = PACKAGE_TAIL;
     serial.write(buffer,TX_BUFFER_SIZE);
-}
+} 
 
 void publisherCallback(MiniSerial& serial,uint8_t* buffer,ros::Publisher& pub,surgical_robot::system_identification & msg,const ros::TimerEvent& timer){
     serial.flush();
@@ -89,10 +93,11 @@ void publisherCallback(MiniSerial& serial,uint8_t* buffer,ros::Publisher& pub,su
     int index = findPackage(buffer,numOfBytes);
     int sizef = sizeof(msg.motor_angle);
     if(index!=NOT_FOUND){
-        memcpy(&msg.motor_angle,buffer+index,3*sizef);
+        memcpy(&msg.motor_angle,buffer+index,SYSTEM_IDENTIFICATION_LENGTH*sizef);
     }else
         ROS_WARN("Package not found!");
 
     ROS_INFO("%0.3f, %0.3f, %0.3f",msg.motor_angle,msg.current,msg.voltage);
+    msg.motor_angle = msg.current = msg.voltage = 0;
     pub.publish(msg);
 }

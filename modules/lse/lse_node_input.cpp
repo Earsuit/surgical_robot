@@ -14,7 +14,7 @@ int main(int argc, char** argv){
 
     //loop rate
     float rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
-    rate = 1/(rate>0?rate:RATE_LOWER_LIMIT);
+    rate = 1.0/(rate>0?rate:RATE_LOWER_LIMIT);
 
     //publisher
     ros::Publisher pub = n.advertise<surgical_robot::motor_commands>("motor_command",1000);
