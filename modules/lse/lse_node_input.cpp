@@ -4,7 +4,7 @@
 #include <math.h>
 
 #define DEFAULT_RATE 20
-#define DEFAULT_SLOPE 2
+#define DEFAULT_SLOPE 1
 #define RATE_LOWER_LIMIT 1
 #define MY_PI 3.14159265358979
 #define CLK_WISE 1
@@ -42,7 +42,7 @@ void chripCallback(double start,float slope,ros::Publisher& pub,surgical_robot::
     double now = ros::WallTime::now().toSec();
     double d = now-start;
     double v = sin(2*MY_PI*(slope*d*d));
-    msg.motor_1_v = abs(v);
+    msg.motor_1_v = abs(v*255);
     msg.motor_1_dir = v>0?CLK_WISE:ANTI_CLK_WISE;
     pub.publish(msg);
 }
