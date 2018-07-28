@@ -12,10 +12,10 @@
 
 #define DEFAULT_RATE 20
 #define RX_BUFFER_SIZE 35
-#define TX_BUFFER_SIZE 6
+#define TX_BUFFER_SIZE 10
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
-#define PACKAGE_LEN 18
+#define RX_PACKAGE_LEN 18
 #define NOT_FOUND -1
 #define RATE_LOWER_LIMIT 1
 
@@ -64,10 +64,10 @@ int main(int argc, char** argv){
 }
 
 int findPackage(uint8_t* buffer,int size){
-    if(size>=PACKAGE_LEN){
-        for(int i=0;i<=(size-PACKAGE_LEN);i++){
+    if(size>=RX_PACKAGE_LEN){
+        for(int i=0;i<=(size-RX_PACKAGE_LEN);i++){
             ROS_DEBUG("BYTE: %x",buffer[i]);
-            if(buffer[i] == PACKAGE_HEAD && buffer[i+PACKAGE_LEN-1] == PACKAGE_TAIL){
+            if(buffer[i] == PACKAGE_HEAD && buffer[i+RX_PACKAGE_LEN-1] == PACKAGE_TAIL){
                 return i+1;
             }
         }
@@ -76,11 +76,11 @@ int findPackage(uint8_t* buffer,int size){
 }
 
 void commandCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &msg){
-    ROS_INFO("Commands received: %d, %d, %d, %d", msg->motor_1,msg->motor_2,msg->motor_3,msg->motor_4);
+    ROS_INFO("Commands received: %d, %d, %d, %d, %d, %d, %d, %d", msg->motor_1_v,msg->motor_1_dir,msg->motor_2_v,msg->motor_2_dir,msg->motor_3_v,msg->motor_3_dir,msg->motor_4_v,msg->motor_4_dir);
     uint8_t buffer[TX_BUFFER_SIZE];
-    int sizef = sizeof(msg->motor_1);
+    int sizef = sizeof(msg->motor_1_v);
     buffer[0] = PACKAGE_HEAD;
-    memcpy(buffer+1,&msg->motor_1,4*sizef);
+    memcpy(buffer+1,&msg->motor_1_v,8*sizef);
     buffer[TX_BUFFER_SIZE-1] = PACKAGE_TAIL;
     serial.write(buffer,TX_BUFFER_SIZE);
 }

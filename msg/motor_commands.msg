@@ -1,5 +1,9 @@
-uint8 motor_1
-uint8 motor_2
-uint8 motor_3
-uint8 motor_4
+uint8 motor_1_v
+uint8 motor_1_dir
+uint8 motor_2_v
+uint8 motor_2_dir
+uint8 motor_3_v
+uint8 motor_3_dir
+uint8 motor_4_v
+uint8 motor_4_dir
  

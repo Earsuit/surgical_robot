@@ -13,10 +13,10 @@
 #define DEFAULT_RATE 20
 #define DEFAULT_BAUDRATE 115200
 #define RX_BUFFER_SIZE 27
-#define TX_BUFFER_SIZE 3
+#define TX_BUFFER_SIZE 4
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
-#define PACKAGE_LEN 14
+#define RX_PACKAGE_LEN 14
 #define NOT_FOUND -1
 #define RATE_LOWER_LIMIT 1
 
@@ -27,19 +27,21 @@ typedef const boost::function<void(const surgical_robot::motor_commandsConstPtr 
 void publisherCallback(MiniSerial&,uint8_t*,ros::Publisher&,surgical_robot::system_identification &,const ros::TimerEvent&);
 typedef const boost::function<void(const ros::TimerEvent&)> pub_callback;
 
+
+//first argument - loop rate; second argument - baud rate
 int main(int argc, char** argv){
     ros::init(argc,argv,"serial");
     ros::NodeHandle n;
+
+    //loop rate
+    float rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
+    rate = 1/(rate>0?rate:RATE_LOWER_LIMIT);
 
     //start serial comunication
     MiniSerial serial(argv[0]);
     int baudRate = (argv[2]==NULL)?DEFAULT_BAUDRATE:atoi(argv[2]);
     serial.begin(baudRate);
     uint8_t buffer[RX_BUFFER_SIZE];
-
-    //loop rate
-    float rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
-    rate = 1/(rate>0?rate:RATE_LOWER_LIMIT);
 
     //publisher
     ros::Publisher system_identification_pub = n.advertise<surgical_robot::system_identification>("system_identification",1000);
@@ -57,10 +59,10 @@ int main(int argc, char** argv){
 }
 
 int findPackage(uint8_t* buffer,int size){
-    if(size>=PACKAGE_LEN){
-        for(int i=0;i<=(size-PACKAGE_LEN);i++){
+    if(size>=RX_PACKAGE_LEN){
+        for(int i=0;i<=(size-RX_PACKAGE_LEN);i++){
             ROS_DEBUG("BYTE: %x",buffer[i]);
-            if(buffer[i] == PACKAGE_HEAD && buffer[i+PACKAGE_LEN-1] == PACKAGE_TAIL){
+            if(buffer[i] == PACKAGE_HEAD && buffer[i+RX_PACKAGE_LEN-1] == PACKAGE_TAIL){
                 return i+1;
             }
         }
@@ -69,11 +71,14 @@ int findPackage(uint8_t* buffer,int size){
 }
 
 void subscriberCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &msg){
+    ROS_INFO("Commands received: %d, %d",msg->motor_1_v,msg->motor_1_dir);
     uint8_t buffer[TX_BUFFER_SIZE];
-    int sizef = sizeof(msg->motor_1);
+    int sizef = sizeof(msg->motor_1_v);
+    //only have one motoe in lse 
     buffer[0] = PACKAGE_HEAD;
-    buffer[1] = msg->motor_1;
-    buffer[2] = PACKAGE_TAIL;
+    buffer[1] = msg->motor_1_v;
+    buffer[2] = msg->motor_1_dir;
+    buffer[3] = PACKAGE_TAIL;
     serial.write(buffer,TX_BUFFER_SIZE);
 }
 
