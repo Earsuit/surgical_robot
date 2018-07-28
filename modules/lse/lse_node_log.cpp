@@ -30,7 +30,6 @@ int main (int argc, char **argv){
         num++;
         name = prefix + to_string(num)+suffix;
         path = dir+name;
-        ROS_DEBUG("%s",path.c_str());
         fp = fopen(path.c_str(),"r");
     }while(fp != NULL);
     fp = fopen(path.c_str(),"w");
@@ -48,6 +47,6 @@ int main (int argc, char **argv){
 }
 
 void subscriberCallback(FILE* fp, const surgical_robot::system_identificationConstPtr & msg){
-    ROS_INFO("%f,%f,%f\n",msg->motor_angle,msg->current,msg->voltage);
+    ROS_DEBUG("%f,%f,%f\n",msg->motor_angle,msg->current,msg->voltage);
     fprintf(fp,"%f,%f,%f\n",msg->motor_angle,msg->current,msg->voltage);
 }

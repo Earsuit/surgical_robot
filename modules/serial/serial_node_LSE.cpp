@@ -75,7 +75,7 @@ int findPackage(uint8_t* buffer,int size){
 }
 
 void subscriberCallback(MiniSerial &serial,const surgical_robot::motor_commandsConstPtr &msg){
-    ROS_INFO("Commands received: %d, %d",msg->motor_1_v,msg->motor_1_dir);
+    ROS_DEBUG("Commands received: %d, %d",msg->motor_1_v,msg->motor_1_dir);
     uint8_t buffer[TX_BUFFER_SIZE];
     int sizef = sizeof(msg->motor_1_v);
     //only have one motoe in lse 
@@ -97,7 +97,7 @@ void publisherCallback(MiniSerial& serial,uint8_t* buffer,ros::Publisher& pub,su
     }else
         ROS_WARN("Package not found!");
 
-    ROS_INFO("%0.3f, %0.3f, %0.3f",msg.motor_angle,msg.current,msg.voltage);
+    ROS_DEBUG("%0.3f, %0.3f, %0.3f",msg.motor_angle,msg.current,msg.voltage);
     msg.motor_angle = msg.current = msg.voltage = 0;
     pub.publish(msg);
 }
