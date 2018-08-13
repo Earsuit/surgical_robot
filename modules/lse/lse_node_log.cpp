@@ -47,6 +47,6 @@ int main (int argc, char **argv){
 }
 
 void subscriberCallback(FILE* fp, const surgical_robot::system_identificationConstPtr & msg){
-    ROS_DEBUG("%f,%f,%f\n",msg->motor_angle,msg->current,msg->voltage);
-    fprintf(fp,"%f,%f,%f\n",msg->motor_angle,msg->current,msg->voltage);
+    ROS_DEBUG("%f,%f,%f\n",msg->motor_angle,msg->motor_v,msg->current);
+    fprintf(fp,"%f,%f,%f\n",msg->motor_angle,msg->motor_v,msg->current);
 }

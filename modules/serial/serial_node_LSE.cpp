@@ -47,7 +47,7 @@ int main(int argc, char** argv){
     //publisher
     ros::Publisher system_identification_pub = n.advertise<surgical_robot::system_identification>("system_identification",1000);
     surgical_robot::system_identification msg;
-    msg.motor_angle = msg.current = msg.voltage = 0;
+    msg.motor_angle = msg.motor_v = msg.current = 0;
     pub_callback publisher_callback =  boost::bind(publisherCallback,boost::ref(serial),buffer,boost::ref(system_identification_pub),boost::ref(msg),_1);
     ros::Timer timer = n.createTimer(ros::Duration(rate),publisher_callback);
     
@@ -97,7 +97,7 @@ void publisherCallback(MiniSerial& serial,uint8_t* buffer,ros::Publisher& pub,su
     }else
         ROS_WARN("Package not found!");
 
-    ROS_DEBUG("%0.3f, %0.3f, %0.3f",msg.motor_angle,msg.current,msg.voltage);
-    msg.motor_angle = msg.current = msg.voltage = 0;
+    ROS_DEBUG("%0.3f, %0.3f, %0.3f",msg.motor_angle,msg.motor_v,msg.current);
+    // msg.motor_angle = msg.motor_v = msg.current = 0;
     pub.publish(msg);
 }
