@@ -1,6 +1,14 @@
 #include "ATMEGA2560.h"
 #include "I2C.h"
 
+#define TRUE 1
+#define FALSE 0
+
+#define DEBUG FALSE
+
+#define PACKAGE_HEAD 0x51
+#define PACKAGE_TAIL 0x71
+
 #define OUTPUT_COMPARE_TIME_INTERVAL 0x1388		//set to 20ms
 #define OUTPUT_COMPARE_ENCODER  0xF424 //set to 1s
 #define TICK_PER_SEC_GEARBOX 10812.5
@@ -9,9 +17,6 @@
 //X1 Encoding
 #define POSITIVE_DIR 0x40		//bits 5,6 -> 10, actually this is equal to true
 #define NEGATIVE_DIR 0x00		//bits 5,6 -> 00, actually this is false
-
-#define TRUE 1
-#define FALSE 0
 
 #define NEGATIVE_MASK 0x8000
 
@@ -79,9 +84,16 @@ void loop(){
 		sei();
 		vel.data = encoderStatesLocal ? -TICK_PER_SEC_GEARBOX/clockTickLocal : TICK_PER_SEC_GEARBOX/clockTickLocal;
 		degree.data = (countLocal/ONE_REVOLUTION)*360+countLocal%ONE_REVOLUTION*DEGREES_PER_PULSE;
-		Serial.print(vel.data);
-		Serial.print(",");
-		Serial.println(degree.data);
+		#if DEBUG
+			Serial.print(vel.data);
+			Serial.print(",");
+			Serial.println(degree.data);
+		#else
+			Serial.write(PACKAGE_HEAD);
+			Serial.write(degree.b,4);
+			Serial.write(vel.b,4);
+			Serial.write(PACKAGE_TAIL);
+		#endif
 	}
 	if(Serial.available()){
 		int v = Serial.parseInt();
