@@ -12,7 +12,7 @@
 #define PWM_PIN_1 PG5       //D4, OC2B
 #define AIN1_PIN_1 PA0      //D22, need to set as an output
 #define AIN2_PIN_1 PA1      //D23, need to set as an output
-#define C1_COUNT_PIN_1 PL0  //D49, use PCINT0, belongs to PCMSK0
+#define C1_COUNT_PIN_1 PL0  //D49, use ICP4, belongs to TIMER 4
 #define C2_COUNT_PIN_1 PJ0  //RXD3,(NOT USED) use PCINT9, belongs to PCMSK1
 #define C1_READ_PIN_1 PC5   //D32, need to set as an input
 #define C2_READ_PIN_1 PC6   //D31, need to set as an input

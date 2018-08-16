@@ -4,15 +4,15 @@
 #define TRUE 1
 #define FALSE 0
 
-#define DEBUG FALSE
+#define DEBUG TRUE
 
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
 
 #define OUTPUT_COMPARE_TIME_INTERVAL 0x1388		//set to 20ms
 #define OUTPUT_COMPARE_ENCODER  0xF424 //set to 1s
-#define TICK_PER_SEC_GEARBOX 10812.5
-#define ONE_REVOLUTION 2085
+#define FACTOR 64285.625
+#define ONE_REVOLUTION 350
 #define DEGREES_PER_PULSE 0.173
 //X1 Encoding
 #define POSITIVE_DIR 0x40		//bits 5,6 -> 10, actually this is equal to true
@@ -34,9 +34,14 @@
 #define BUS_VOL_LSB 0.004f  //Volt
 #define CURRENT_LSB 0.000013f	//Amp
 
+//measurement interval interrupt
+#define MEASUREMENT_OUTPUT_COMPARE 0x186A //6250, 0.025s
+
 volatile uint16_t clockTickShared;
 volatile uint8_t encoderPulseShared = 0x00;
 volatile int32_t countShared = 0;
+int32_t countLocal = 0;
+int32_t previousCount = 0;
 uint8_t encoderPulseLocal = 0x00;
 uint8_t encoderStatesLocal = 0x00;
 uint16_t clockTickLocal = 0x00;
@@ -48,7 +53,6 @@ typedef union FLOAT{
 }Float;
 
 Float vel,degree;
-int32_t countLocal = 0;
 
 int16_t voltRegValue, currentRegVal;
 float volt = 0;
@@ -56,6 +60,8 @@ float current = 0;
 
 using namespace TWI;
 uint8_t tt = 0;
+
+uint8_t output = FALSE;
 
 void setup(){
 	vel.data = degree.data = 0;
@@ -68,33 +74,51 @@ void setup(){
 	SET_STBY_PIN(HIGH);
 	SET_AIN2_PIN_1(HIGH);
 	SET_AIN1_PIN_1(LOW);
-	// INA219Setup();
-	encoderClockSetup();
+	INA219Setup();
 	PWM_setup();
-	PWM(255);
+	timerSetup();
+	PWM(0);
 }
 
 void loop(){ 
 	if(updated){
 		cli();
-		updated = false;
+		updated = FALSE;
 		encoderStatesLocal = encoderPulseShared;
 		clockTickLocal = clockTickShared;
 		countLocal = countShared;
 		sei();
-		vel.data = encoderStatesLocal ? -TICK_PER_SEC_GEARBOX/clockTickLocal : TICK_PER_SEC_GEARBOX/clockTickLocal;
+	}
+	//for now the output part runs 2.164ms
+	if(output){
+		// TCNT3 = 0;
+		output = FALSE;
+		//if the count is not updated, the vel is 0
+		if(previousCount!=countLocal)
+			vel.data = encoderStatesLocal ? -(FACTOR/clockTickLocal) : FACTOR/clockTickLocal;
+		else
+			vel.data = 0;
 		degree.data = (countLocal/ONE_REVOLUTION)*360+countLocal%ONE_REVOLUTION*DEGREES_PER_PULSE;
+		getVolt();
+		getCueent();
 		#if DEBUG
 			Serial.print(vel.data);
 			Serial.print(",");
-			Serial.println(degree.data);
+			Serial.print(degree.data);
+			Serial.print(",");
+			Serial.print(volt);
+			Serial.print(",");
+			Serial.println(current);
 		#else
 			Serial.write(PACKAGE_HEAD);
-			Serial.write(degree.b,4);
-			Serial.write(vel.b,4);
+			Serial.write(degree.bytes,4);
+			Serial.write(vel.bytes,4);
 			Serial.write(PACKAGE_TAIL);
 		#endif
+		previousCount = countLocal;
+		// Serial.println(TCNT3);
 	}
+
 	if(Serial.available()){
 		int v = Serial.parseInt();
 		if(v & NEGATIVE_MASK){
@@ -171,26 +195,39 @@ void PWM(uint8_t value){
 	OCR0B = value;
 }
 
-void timeIntervalSetup(){
-	cli();  //disable the global interrupt
-    //Timer/Counter 1
-    TCCR3A = 0x00;
-    TCCR3B = (_BV(WGM32)) | (_BV(CS31)) | (_BV(CS30));  //CTC mode, clk/64
-    OCR3A = OUTPUT_COMPARE_TIME_INTERVAL; //set to 200ms
-    TCNT3 = 0x00; //initialise the counter
-    TIMSK3 = _BV(OCIE3A);  //Output Compare A Match Interrupt Enable
-    sei(); //enable global interrupt
-}
-
 void encoderClockSetup(){
-	cli();  //disable the global interrupt
     //Timer/Counter 4
     TCCR4A = 0x00;
     TCCR4B = (_BV(WGM42)) | (_BV(CS42)) | (_BV(ICES4));  //CTC mode, clk/256, rising (positive) edge will trigger the capture.
     OCR4A = OUTPUT_COMPARE_ENCODER; //set to 1s
     TCNT4 = 0x00; //initialise the counter
 	TIMSK4 = _BV(ICIE4);   //enable Input Capture Interrupt
-    sei(); //enable global interrupt
+}
+
+void measurementIntervalSetup(){
+    //Timer/Counter 1
+    TCCR1A = 0x00;
+    TCCR1B = (_BV(WGM12)) | (_BV(CS11)) | (_BV(CS10));  //CTC mode, clk/64
+    OCR1A = MEASUREMENT_OUTPUT_COMPARE;
+    TCNT1 = 0x00; //initialise the counter
+    TIMSK1 = _BV(OCIE1A);  //Output Compare A Match Interrupt Enable
+}
+
+// To calculate time
+void calculateIntervalSetup(){
+	//Timer/Counter 3
+    TCCR3A = 0x00;
+    TCCR3B = (_BV(WGM32)) | (_BV(CS31)) | (_BV(CS30));  //CTC mode, clk/64
+    OCR3A = 0xFFFF;
+    TCNT3 = 0x00; //initialise the counter
+}
+
+void timerSetup(){
+	cli();
+	encoderClockSetup();
+	measurementIntervalSetup();
+	// calculateIntervalSetup();
+	sei();
 }
 
 ISR(TIMER4_CAPT_vect){
@@ -201,6 +238,6 @@ ISR(TIMER4_CAPT_vect){
 	updated = TRUE;
 }
 
-ISR(TIMER3_COMPA_vect){
-	updated = TRUE;
+ISR(TIMER1_COMPA_vect){
+	output = TRUE;
 }
