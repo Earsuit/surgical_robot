@@ -10,7 +10,6 @@
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
 
-#define OUTPUT_COMPARE_TIME_INTERVAL 0x1388		//set to 20ms
 #define OUTPUT_COMPARE_ENCODER  0xF424 //set to 1s
 #define FACTOR 64285.625
 #define ONE_REVOLUTION 350
@@ -36,7 +35,7 @@
 #define CURRENT_LSB 0.000013f	//Amp
 
 //measurement interval interrupt
-#define MEASUREMENT_OUTPUT_COMPARE 0x186A //6250, 0.025s
+#define MEASUREMENT_OUTPUT_COMPARE 0xEA6 //3750, 15ms
 
 #define MY_PI 3.14159265358979
 
@@ -68,7 +67,7 @@ uint8_t tt = 0;
 uint8_t output = FALSE;
 
 float t = 0;
-float dt = 0.02;  //20ms
+float dt = 0.015;  //10ms
 float k = 1;
 
 void setup(){
@@ -236,7 +235,6 @@ void calculateIntervalSetup(){
     TCCR3A = 0x00;
     TCCR3B = (_BV(WGM32)) | (_BV(CS31)) | (_BV(CS30));  //CTC mode, clk/64
     OCR3A = 0xFFFF;
-    TCNT3 = 0x00; //initialise the counter
 }
 
 void timerSetup(){
