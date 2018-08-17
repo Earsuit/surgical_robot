@@ -54,8 +54,8 @@ int main(int argc, char** argv){
     ros::Timer timer = n.createTimer(ros::Duration(rate),publisher_callback);
     
     //subscriber
-    sub_callback subscriber_callback = boost::bind(subscriberCallback,atoi(argv[3]),_1);
-    ros::Subscriber motor_command_sub = n.subscribe("motor_command",1000,subscriber_callback);
+    // sub_callback subscriber_callback = boost::bind(subscriberCallback,atoi(argv[3]),_1);
+    // ros::Subscriber motor_command_sub = n.subscribe("motor_command",1000,subscriber_callback);
 
     //using two threads 
     ros::AsyncSpinner s(2);

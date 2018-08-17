@@ -1,5 +1,6 @@
 #include "ATMEGA2560.h"
 #include "I2C.h"
+#include <math.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -37,6 +38,10 @@
 //measurement interval interrupt
 #define MEASUREMENT_OUTPUT_COMPARE 0x186A //6250, 0.025s
 
+#define MY_PI 3.14159265358979
+
+#define RUNTIME 15
+
 volatile uint16_t clockTickShared;
 volatile uint8_t encoderPulseShared = 0x00;
 volatile int32_t countShared = 0;
@@ -55,16 +60,19 @@ typedef union FLOAT{
 Float vel,degree;
 
 int16_t voltRegValue, currentRegVal;
-float volt = 0;
-float current = 0;
+Float volt,current;
 
 using namespace TWI;
 uint8_t tt = 0;
 
 uint8_t output = FALSE;
 
+float t = 0;
+float dt = 0.02;  //20ms
+float k = 1;
+
 void setup(){
-	vel.data = degree.data = 0;
+	vel.data = degree.data = volt.data = current.data = 0;
 	Serial.begin(115200);
 	SET_STBY_PIN_OUT;
 	SET_AIN1_PIN_1_OUT;
@@ -72,65 +80,80 @@ void setup(){
 	SET_C1_READ_PIN_1_IN;
 	SET_C2_READ_PIN_1_IN;
 	SET_STBY_PIN(HIGH);
-	SET_AIN2_PIN_1(HIGH);
+	// SET_AIN2_PIN_1(HIGH);
 	SET_AIN1_PIN_1(LOW);
 	INA219Setup();
 	PWM_setup();
 	timerSetup();
-	PWM(0);
+	PWM(1023);
 }
 
 void loop(){ 
-	if(updated){
-		cli();
-		updated = FALSE;
-		encoderStatesLocal = encoderPulseShared;
-		clockTickLocal = clockTickShared;
-		countLocal = countShared;
-		sei();
-	}
-	//for now the output part runs 2.164ms
-	if(output){
-		// TCNT3 = 0;
-		output = FALSE;
-		//if the count is not updated, the vel is 0
-		if(previousCount!=countLocal)
-			vel.data = encoderStatesLocal ? -(FACTOR/clockTickLocal) : FACTOR/clockTickLocal;
-		else
-			vel.data = 0;
-		degree.data = (countLocal/ONE_REVOLUTION)*360+countLocal%ONE_REVOLUTION*DEGREES_PER_PULSE;
-		getVolt();
-		getCueent();
-		#if DEBUG
-			Serial.print(vel.data);
-			Serial.print(",");
-			Serial.print(degree.data);
-			Serial.print(",");
-			Serial.print(volt);
-			Serial.print(",");
-			Serial.println(current);
-		#else
-			Serial.write(PACKAGE_HEAD);
-			Serial.write(degree.bytes,4);
-			Serial.write(vel.bytes,4);
-			Serial.write(PACKAGE_TAIL);
-		#endif
-		previousCount = countLocal;
-		// Serial.println(TCNT3);
-	}
-
-	if(Serial.available()){
-		int v = Serial.parseInt();
-		if(v & NEGATIVE_MASK){
-			SET_AIN2_PIN_1(LOW);
-			SET_AIN1_PIN_1(HIGH);
-			PWM(-v);
-		}else{
-			SET_AIN2_PIN_1(HIGH);
-			SET_AIN1_PIN_1(LOW);
-			PWM(v);
+	if(t<RUNTIME){
+		if(updated){
+			cli();
+			updated = FALSE;
+			encoderStatesLocal = encoderPulseShared;
+			clockTickLocal = clockTickShared;
+			countLocal = countShared;
+			sei();
 		}
-	}
+		//for now the output part runs 2.164ms
+		if(output){
+			output = FALSE;
+			int16_t v = chrip();
+			if(v>=0){
+				SET_AIN1_PIN_1(LOW);
+				PWM(v);
+			}else{
+				SET_AIN1_PIN_1(HIGH);
+				PWM(1023+v);
+			}
+			//if the count is not updated, the vel is 0
+			if(previousCount!=countLocal)
+				vel.data = encoderStatesLocal ? -(FACTOR/clockTickLocal) : FACTOR/clockTickLocal;
+			else
+				vel.data = 0;
+			degree.data = (countLocal/ONE_REVOLUTION)*360+countLocal%ONE_REVOLUTION*DEGREES_PER_PULSE;
+			getVolt();
+			getCueent();
+			#if DEBUG
+				Serial.print(degree.data);
+				Serial.print(",");
+				Serial.print(vel.data);
+				Serial.print(",");
+				Serial.print(volt.data);
+				Serial.print(",");
+				Serial.println(current.data);
+			#else
+				Serial.write(PACKAGE_HEAD);
+				Serial.write(degree.bytes,4);
+				Serial.write(vel.bytes,4);
+				Serial.write(current.bytes,4);
+				Serial.write(volt.bytes,4);
+				Serial.write(PACKAGE_TAIL);
+			#endif
+			previousCount = countLocal;
+		}
+	}else
+		SET_STBY_PIN(LOW);
+	// if(Serial.available()){
+	// 	int v = Serial.parseInt();
+	// 	if(v & NEGATIVE_MASK){
+	// 		SET_AIN2_PIN_1(LOW);
+	// 		SET_AIN1_PIN_1(HIGH);
+	// 		PWM(-v);
+	// 	}else{
+	// 		SET_AIN2_PIN_1(HIGH);
+	// 		SET_AIN1_PIN_1(LOW);
+	// 		PWM(v);
+	// 	}
+	// }
+}
+
+inline int16_t chrip(){
+	t += dt;
+	return 1023*sin(2*MY_PI*k*t*t);
 }
 
 void INA219Setup(){
@@ -158,7 +181,7 @@ inline void getVolt(){
 	voltRegValue = ((readBuffer()<<8) | readBuffer())>>3;
 	if(voltRegValue  & 0x1000)		//check if negative
 		voltRegValue |= 0xE000;
-	volt = voltRegValue*BUS_VOL_LSB;
+	volt.data = voltRegValue*BUS_VOL_LSB;
 }
 
 inline void getCueent(){
@@ -167,19 +190,8 @@ inline void getCueent(){
 	write(CURRENT_REG);
 	requestFrom(INA219_ADDRESS,1,true);
 	currentRegVal = (readBuffer()<<8) | readBuffer();
-	current = currentRegVal*CURRENT_LSB;
+	current.data = currentRegVal*CURRENT_LSB;
 }
-
-// void pinChangeSetup(){
-// 	cli();
-// 	//INT
-// 	// EICRA = _BV(ISC10) | _BV(ISC00);    //Any logical change on INT1 and INT0 generates an interrupt request.
-// 	// EIMSK = _BV(INT0) | _BV(INT1);		//interrupt enable
-// 	//PCINT
-// 	PCMSK0 = _BV(PCINT0);		//Set PCINT0
-// 	PCICR = _BV(PCIE0);			//Enable PCINT
-// 	sei();
-// }
 
 // counter 2
 void PWM_setup(){
@@ -187,12 +199,17 @@ void PWM_setup(){
 	// TOP = 0xFF, CLK/128
 	// if set TOP to OCRA, has to set OCR0A as well.
 	SET_PWM_PIN_OUTPUT;
-	TCCR0A = _BV(COM0B1)  | _BV(WGM01) | _BV(WGM00);
-	TCCR0B = _BV(CS00) | _BV(CS01);
+	// TCCR0A = _BV(COM0B1)  | _BV(WGM01) | _BV(WGM00);
+	// TCCR0B = _BV(CS00) | _BV(CS01);
+
+	// 10-bit Fasr PWM Mode, Set OC5A on Compare Match when up-counting Clear OC2A on Compare Match when down-counting,
+	// TOP = 0x3FF, CLK/8
+	TCCR5A = _BV(COM5A1)  | _BV(WGM51) | _BV(WGM50);
+	TCCR5B = _BV(CS51) | _BV(WGM52);
 }
 
-void PWM(uint8_t value){
-	OCR0B = value;
+void PWM(uint16_t value){
+	OCR5A = value;
 }
 
 void encoderClockSetup(){
