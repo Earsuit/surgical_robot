@@ -33,7 +33,7 @@ int main (int argc, char **argv){
         fp = fopen(path.c_str(),"r");
     }while(fp != NULL);
     fp = fopen(path.c_str(),"w");
-    fprintf(fp,"Angle,current,Voltage\n");
+    fprintf(fp,"Angle,velocity,current,Voltage\n");
 
     //subscriber 
     sub_callback subscriber_callback = boost::bind(subscriberCallback,fp,_1);
@@ -47,6 +47,6 @@ int main (int argc, char **argv){
 }
 
 void subscriberCallback(FILE* fp, const surgical_robot::system_identificationConstPtr & msg){
-    ROS_DEBUG("%f,%f,%f\n",msg->motor_angle,msg->motor_v,msg->current);
-    fprintf(fp,"%f,%f,%f\n",msg->motor_angle,msg->motor_v,msg->current);
+    ROS_DEBUG("%.2f,%.2f,%.2f,%.2f\n",msg->motor_angle,msg->motor_v,msg->current,msg->voltage);
+    fprintf(fp,"%f,%f,%f,%f\n",msg->motor_angle,msg->motor_v,msg->current,msg->voltage);
 }

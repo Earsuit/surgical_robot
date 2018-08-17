@@ -5,7 +5,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define DEBUG TRUE
+#define DEBUG FALSE
 
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
