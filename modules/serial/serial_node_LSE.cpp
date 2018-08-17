@@ -95,9 +95,8 @@ void publisherCallback(int port,uint8_t* buffer,ros::Publisher& pub,surgical_rob
     int sizef = sizeof(msg.motor_angle);
     if(index!=NOT_FOUND){
         memcpy(&msg.motor_angle,buffer+index,SYSTEM_IDENTIFICATION_LENGTH*sizef);
+        ROS_INFO("%0.2f, %0.2f, %0.2f,%0.2f",msg.motor_angle,msg.motor_v,msg.current,msg.voltage);
+        pub.publish(msg);
     }else
-        ROS_WARN("Package not found!");
-
-    ROS_INFO("%0.2f, %0.2f, %0.2f,%0.2f",msg.motor_angle,msg.motor_v,msg.current,msg.voltage);
-    pub.publish(msg);
+        ROS_WARN("Package not found!"); 
 }
