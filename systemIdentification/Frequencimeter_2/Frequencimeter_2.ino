@@ -13,7 +13,7 @@
 #define OUTPUT_COMPARE_ENCODER  0xF424 //set to 1s
 #define FACTOR 64285.625
 #define ONE_REVOLUTION 350
-#define DEGREES_PER_PULSE 0.173
+#define DEGREES_PER_PULSE 1.0286
 //X1 Encoding
 #define POSITIVE_DIR 0x40		//bits 5,6 -> 10, actually this is equal to true
 #define NEGATIVE_DIR 0x00		//bits 5,6 -> 00, actually this is false
@@ -39,17 +39,17 @@
 
 #define MY_PI 3.14159265358979
 
-#define RUNTIME 15
+#define RUNTIME 15.0
 
 volatile uint16_t clockTickShared;
 volatile uint8_t encoderPulseShared = 0x00;
 volatile int32_t countShared = 0;
+volatile uint8_t output = FALSE;
+volatile uint8_t updated = FALSE;
 int32_t countLocal = 0;
-int32_t previousCount = 0;
+int32_t countTotal = 0;
 uint8_t encoderPulseLocal = 0x00;
 uint8_t encoderStatesLocal = 0x00;
-uint16_t clockTickLocal = 0x00;
-uint8_t updated = 0x00;
 
 typedef union FLOAT{
 	float data;
@@ -62,12 +62,9 @@ int16_t voltRegValue, currentRegVal;
 Float volt,current;
 
 using namespace TWI;
-uint8_t tt = 0;
-
-uint8_t output = FALSE;
 
 float t = 0;
-float dt = 0.015;  //10ms
+float dt = 0.015;  //15ms
 float k = 1;
 
 void setup(){
@@ -84,58 +81,53 @@ void setup(){
 	INA219Setup();
 	PWM_setup();
 	timerSetup();
-	PWM(1023);
 }
 
-void loop(){ 
-	if(t<RUNTIME){
-		if(updated){
-			cli();
-			updated = FALSE;
-			encoderStatesLocal = encoderPulseShared;
-			clockTickLocal = clockTickShared;
-			countLocal = countShared;
-			sei();
-		}
+void loop(){ 		
+	if(updated){
+		cli();
+		updated = FALSE;
+		encoderPulseLocal = encoderPulseShared;
+		countLocal = countShared;
+		sei();
+	}
+	if(output && t<RUNTIME){
 		//for now the output part runs 2.164ms
-		if(output){
-			output = FALSE;
-			int16_t v = chrip();
-			if(v>=0){
-				SET_AIN1_PIN_1(LOW);
-				PWM(v);
-			}else{
-				SET_AIN1_PIN_1(HIGH);
-				PWM(1023+v);
-			}
-			//if the count is not updated, the vel is 0
-			if(previousCount!=countLocal)
-				vel.data = encoderStatesLocal ? -(FACTOR/clockTickLocal) : FACTOR/clockTickLocal;
-			else
-				vel.data = 0;
-			degree.data = (countLocal/ONE_REVOLUTION)*360+countLocal%ONE_REVOLUTION*DEGREES_PER_PULSE;
-			getVolt();
-			getCueent();
-			#if DEBUG
-				Serial.print(degree.data);
-				Serial.print(",");
-				Serial.print(vel.data);
-				Serial.print(",");
-				Serial.print(volt.data);
-				Serial.print(",");
-				Serial.println(current.data);
-			#else
-				Serial.write(PACKAGE_HEAD);
-				Serial.write(degree.bytes,4);
-				Serial.write(vel.bytes,4);
-				Serial.write(current.bytes,4);
-				Serial.write(volt.bytes,4);
-				Serial.write(PACKAGE_TAIL);
-			#endif
-			previousCount = countLocal;
+		output = FALSE;
+		countShared = 0;
+		int16_t v = chrip();
+		if(v>=0){
+			SET_AIN1_PIN_1(LOW);
+			PWM(v);
+		}else{
+			SET_AIN1_PIN_1(HIGH);
+			PWM(1023+v);
 		}
-	}else
+		//if the count is not updated, the vel is 0
+		vel.data = DEGREES_PER_PULSE*countLocal/dt;
+		degree.data = (countLocal/ONE_REVOLUTION)*360+countLocal%ONE_REVOLUTION*DEGREES_PER_PULSE;
+		getVolt();
+		getCueent();
+		#if DEBUG
+			Serial.print(degree.data);
+			Serial.print(",");
+			Serial.print(vel.data);
+			Serial.print(",");
+			Serial.print(volt.data);
+			Serial.print(",");
+			Serial.println(current.data);
+		#else
+			Serial.write(PACKAGE_HEAD);
+			Serial.write(degree.bytes,4);
+			Serial.write(vel.bytes,4);
+			Serial.write(current.bytes,4);
+			Serial.write(volt.bytes,4);
+			Serial.write(PACKAGE_TAIL);
+		#endif
+	}else{
 		SET_STBY_PIN(LOW);
+	}
+			
 	// if(Serial.available()){
 	// 	int v = Serial.parseInt();
 	// 	if(v & NEGATIVE_MASK){
@@ -246,9 +238,7 @@ void timerSetup(){
 }
 
 ISR(TIMER4_CAPT_vect){
-	TCNT4 = 0x00;
 	encoderPulseShared = READ_C2_1;
-	clockTickShared = ICR4;
 	countShared = (encoderPulseShared)?countShared-1:countShared+1;
 	updated = TRUE;
 }

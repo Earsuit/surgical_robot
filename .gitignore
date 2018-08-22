@@ -20,4 +20,4 @@ CTestTestfile.cmake
 .DS_Store
 
 # csv 
-.csv
+data/
