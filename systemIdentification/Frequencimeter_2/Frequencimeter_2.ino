@@ -11,9 +11,9 @@
 #define PACKAGE_TAIL 0x71
 
 #define OUTPUT_COMPARE_ENCODER  0xF424 //set to 1s
-#define FACTOR 64285.625
+#define FACTOR 64285.625f
 #define ONE_REVOLUTION 350
-#define DEGREES_PER_PULSE 1.0286
+#define DEGREES_PER_PULSE 1.0286f
 //X1 Encoding
 #define POSITIVE_DIR 0x40		//bits 5,6 -> 10, actually this is equal to true
 #define NEGATIVE_DIR 0x00		//bits 5,6 -> 00, actually this is false
@@ -32,7 +32,7 @@
 #define CALIB_REG 0x05
 
 #define BUS_VOL_LSB 0.004f  //Volt
-#define CURRENT_LSB 0.000013f	//Amp
+#define CURRENT_LSB 2.44e-5	//Amp
 
 //measurement interval interrupt
 #define MEASUREMENT_OUTPUT_COMPARE 0xEA6 //3750, 15ms
@@ -92,10 +92,11 @@ void loop(){
 				countLocal = countShared;
 				// turn on input capture interrupt
 				TIMSK4 = _BV(ICIE4);
+				// reset the shared counter
+				countShared = 0;
+				countTotal += countLocal;
 			}
 			//reset counter
-			countShared = 0;
-			countTotal += countLocal;
 			int16_t v = chrip();
 			if(v>=0){
 				SET_AIN1_PIN_1(LOW);
@@ -107,8 +108,8 @@ void loop(){
 			//if the count is not updated, the vel is 0
 			vel.data = DEGREES_PER_PULSE*countLocal/dt;
 			degree.data = (countTotal/ONE_REVOLUTION)*360+countTotal%ONE_REVOLUTION*DEGREES_PER_PULSE;
-			getVolt();
-			getCueent();
+			volt.data = getVolt();
+			current.data = getCueent();
 			#if DEBUG
 				Serial.print(degree.data);
 				Serial.print(",");
@@ -158,15 +159,14 @@ void INA219Setup(){
 	write(0x9);	
 	write(0x1F,true);	
 
-	//program the calibration register to 0x7B13
+	//program the calibration registe, max expected 0.8A
 	startTrans(INA219_ADDRESS,WRITE);
 	write(CALIB_REG);
-	// only change the Bus Voltage Range to 16V
-	write(0x7B);	
-	write(0x13,true);	
+	write(0x41);	
+	write(0x89,true);	
 }
 
-inline void getVolt(){
+inline float getVolt(){
 	int16_t voltRegValue;
 	startTrans(INA219_ADDRESS,WRITE);
 	write(BUS_VOL_REG);
@@ -174,16 +174,16 @@ inline void getVolt(){
 	voltRegValue = ((readBuffer()<<8) | readBuffer())>>3;
 	if(voltRegValue  & 0x1000)		//check if negative
 		voltRegValue |= 0xE000;
-	volt.data = voltRegValue*BUS_VOL_LSB;
+	return voltRegValue*BUS_VOL_LSB;
 }
 
-inline void getCueent(){
+inline float getCueent(){
 	int16_t currentRegVal;
 	startTrans(INA219_ADDRESS,WRITE);
 	write(CURRENT_REG);
 	requestFrom(INA219_ADDRESS,1,true);
 	currentRegVal = (readBuffer()<<8) | readBuffer();
-	current.data = currentRegVal*CURRENT_LSB;
+	return currentRegVal*CURRENT_LSB;
 }
 
 // counter 2
