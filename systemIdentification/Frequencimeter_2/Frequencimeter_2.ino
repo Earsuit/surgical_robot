@@ -41,6 +41,8 @@
 
 #define RUNTIME 15.0
 
+#define TO_VOLTAGE 0.006647		//6.8/1023
+
 volatile uint8_t encoderPulseShared = 0x00;
 volatile int32_t countShared = 0;
 volatile uint8_t output = FALSE;
@@ -108,7 +110,7 @@ void loop(){
 			//if the count is not updated, the vel is 0
 			vel.data = DEGREES_PER_PULSE*countLocal/dt;
 			degree.data = (countTotal/ONE_REVOLUTION)*360+countTotal%ONE_REVOLUTION*DEGREES_PER_PULSE;
-			volt.data = getVolt();
+			volt.data = v*TO_VOLTAGE;
 			current.data = getCueent();
 			#if DEBUG
 				Serial.print(degree.data);
@@ -146,8 +148,9 @@ void loop(){
 }
 
 inline int16_t chrip(){
+	int16_t tmp = 1023*sin(2*MY_PI*k*t*t);
 	t += dt;
-	return 1023*sin(2*MY_PI*k*t*t);
+	return tmp;
 }
 
 void INA219Setup(){

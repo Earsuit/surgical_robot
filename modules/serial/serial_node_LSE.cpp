@@ -95,8 +95,6 @@ void publisherCallback(int port,uint8_t* buffer,ros::Publisher& pub,surgical_rob
     int sizef = sizeof(msg.motor_angle);
     if(index!=NOT_FOUND){
         memcpy(&msg.motor_angle,buffer+index,SYSTEM_IDENTIFICATION_LENGTH*sizef);
-        if(msg.current<0)
-            msg.voltage = -msg.voltage;
         ROS_INFO("%0.2f, %0.2f, %0.2f,%0.2f",msg.motor_angle,msg.motor_v,msg.current,msg.voltage);
         pub.publish(msg);
     }else
