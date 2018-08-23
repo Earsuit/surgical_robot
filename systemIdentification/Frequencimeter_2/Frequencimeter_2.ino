@@ -41,15 +41,12 @@
 
 #define RUNTIME 15.0
 
-volatile uint16_t clockTickShared;
 volatile uint8_t encoderPulseShared = 0x00;
 volatile int32_t countShared = 0;
 volatile uint8_t output = FALSE;
 volatile uint8_t updated = FALSE;
 int32_t countLocal = 0;
 int32_t countTotal = 0;
-uint8_t encoderPulseLocal = 0x00;
-uint8_t encoderStatesLocal = 0x00;
 
 typedef union FLOAT{
 	float data;
@@ -83,47 +80,52 @@ void setup(){
 	timerSetup();
 }
 
-void loop(){ 		
-	if(updated){
-		cli();
-		updated = FALSE;
-		encoderPulseLocal = encoderPulseShared;
-		countLocal = countShared;
-		sei();
-	}
-	if(output && t<RUNTIME){
-		//for now the output part runs 2.164ms
-		output = FALSE;
-		countShared = 0;
-		int16_t v = chrip();
-		if(v>=0){
-			SET_AIN1_PIN_1(LOW);
-			PWM(v);
-		}else{
-			SET_AIN1_PIN_1(HIGH);
-			PWM(1023+v);
+void loop(){
+	if(t<RUNTIME){
+		if(output){
+			//for now the output part runs 2.164ms
+			output = FALSE;
+			if(updated){
+				// turn off input capture interrupt
+				TIMSK4 = 0x00;
+				updated = FALSE;
+				countLocal = countShared;
+				// turn on input capture interrupt
+				TIMSK4 = _BV(ICIE4);
+			}
+			//reset counter
+			countShared = 0;
+			countTotal += countLocal;
+			int16_t v = chrip();
+			if(v>=0){
+				SET_AIN1_PIN_1(LOW);
+				PWM(v);
+			}else{
+				SET_AIN1_PIN_1(HIGH);
+				PWM(1023+v);
+			}
+			//if the count is not updated, the vel is 0
+			vel.data = DEGREES_PER_PULSE*countLocal/dt;
+			degree.data = (countTotal/ONE_REVOLUTION)*360+countTotal%ONE_REVOLUTION*DEGREES_PER_PULSE;
+			getVolt();
+			getCueent();
+			#if DEBUG
+				Serial.print(degree.data);
+				Serial.print(",");
+				Serial.print(vel.data);
+				Serial.print(",");
+				Serial.print(volt.data);
+				Serial.print(",");
+				Serial.println(current.data);
+			#else
+				Serial.write(PACKAGE_HEAD);
+				Serial.write(degree.bytes,4);
+				Serial.write(vel.bytes,4);
+				Serial.write(current.bytes,4);
+				Serial.write(volt.bytes,4);
+				Serial.write(PACKAGE_TAIL);
+			#endif
 		}
-		//if the count is not updated, the vel is 0
-		vel.data = DEGREES_PER_PULSE*countLocal/dt;
-		degree.data = (countLocal/ONE_REVOLUTION)*360+countLocal%ONE_REVOLUTION*DEGREES_PER_PULSE;
-		getVolt();
-		getCueent();
-		#if DEBUG
-			Serial.print(degree.data);
-			Serial.print(",");
-			Serial.print(vel.data);
-			Serial.print(",");
-			Serial.print(volt.data);
-			Serial.print(",");
-			Serial.println(current.data);
-		#else
-			Serial.write(PACKAGE_HEAD);
-			Serial.write(degree.bytes,4);
-			Serial.write(vel.bytes,4);
-			Serial.write(current.bytes,4);
-			Serial.write(volt.bytes,4);
-			Serial.write(PACKAGE_TAIL);
-		#endif
 	}else{
 		SET_STBY_PIN(LOW);
 	}

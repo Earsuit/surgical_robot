@@ -92,7 +92,6 @@ void publisherCallback(int port,uint8_t* buffer,ros::Publisher& pub,surgical_rob
     int numOfBytes = RS232_PollComport(port,buffer,RX_BUFFER_SIZE);
     ROS_DEBUG("Received: %d",numOfBytes);
     int index = findPackage(buffer,numOfBytes);
-    // int index = 1;
     int sizef = sizeof(msg.motor_angle);
     if(index!=NOT_FOUND){
         memcpy(&msg.motor_angle,buffer+index,SYSTEM_IDENTIFICATION_LENGTH*sizef);
