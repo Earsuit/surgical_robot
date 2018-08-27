@@ -5,7 +5,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define DEBUG FALSE
+#define DEBUG TRUE
 
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
@@ -13,7 +13,8 @@
 #define OUTPUT_COMPARE_ENCODER  0xF424 //set to 1s
 #define FACTOR 64285.625f
 #define ONE_REVOLUTION 350
-#define DEGREES_PER_PULSE 1.0286f
+#define DEGREES_PER_PULSE 1.0286
+#define RADIANS_PER_PULSE 0.0179524567
 //X1 Encoding
 #define POSITIVE_DIR 0x40		//bits 5,6 -> 10, actually this is equal to true
 #define NEGATIVE_DIR 0x00		//bits 5,6 -> 00, actually this is false
@@ -38,36 +39,76 @@
 #define MEASUREMENT_OUTPUT_COMPARE 0xEA6 //3750, 15ms
 
 #define MY_PI 3.14159265358979
+#define MY_2PI 6.2831853072
 
 #define RUNTIME 150
 
 #define TO_VOLTAGE 0.006647		//6.8/1023
+
+#define SATURATION 6.8
+
+//
+#define PIDF 0x01
+#define PI 0x02
+#define CONTROLLER PIDF
 
 volatile uint8_t encoderPulseShared = 0x00;
 volatile int32_t countShared = 0;
 volatile uint8_t output = FALSE;
 volatile uint8_t updated = FALSE;
 int32_t countLocal = 0;
-int32_t countTotal = 0;
 
 typedef union FLOAT{
 	float data;
 	uint8_t bytes[4];
 }Float;
 
-Float vel,degree;
+Float vel,angle;
 
-int16_t voltRegValue, currentRegVal;
-Float volt,current;
+float ref = 4;
+
+// controller
+#if CONTROLLER == PIDF
+	float int_y_k = 0;		//y[k]
+	float de_y_k_1 = 0;		//y[k-1]
+	float de_u_k_1 = 0;		//u[k-1]
+	float diff = 0;			//difference between the wanted control and the actual control
+	float kp = 1.3;
+	float ki = 1.17;
+	float kd = 0.1;
+	float Tf = 0.0237;
+	float b = 0.871;
+	float c = 0.358;
+	float dt = 0.015;
+	float k_anti = 0.06;
+#elif CONTROLLER == PI	
+	float int_y_k = 0;		//y[k]
+	float de_y_k_1 = 0;		//y[k-1]
+	float de_u_k_1 = 0;		//u[k-1]
+	float diff = 0;			//difference between the wanted control and the actual control
+	float kp = 2;
+	float ki = 1;
+	float kd = 2.1;
+	float Tf = 0.0237;
+	float b = 0.871;
+	float c = 0.358;
+	float dt = 0.015;
+	float k_anti = 0.005;
+#endif
+
+// butterworth
+float filt_u_k_1 = 0;
+float filt_y_k = 0;
+float filt_y_k_1 = 0;
+float filt_a = 0.0001117;
+float filt_b = 0.0001109;
+float filt_c = -1.979;
+float filt_d = 0.979;
 
 using namespace TWI;
 
-float t = 0;
-float dt = 0.015;  //15ms
-float k = 0.133;
-
 void setup(){
-	vel.data = degree.data = volt.data = current.data = 0;
+	angle.data = 0;
 	Serial.begin(115200);
 	SET_STBY_PIN_OUT;
 	SET_AIN1_PIN_1_OUT;
@@ -75,116 +116,87 @@ void setup(){
 	SET_C1_READ_PIN_1_IN;
 	SET_C2_READ_PIN_1_IN;
 	SET_STBY_PIN(HIGH);
-	INA219Setup();
 	PWM_setup();
 	timerSetup();
 }
 
 void loop(){
-	if(t<RUNTIME){
-		if(output){
-			//for now the output part runs 2.164ms
-			output = FALSE;
-			if(updated){
-				// turn off input capture interrupt
-				TIMSK4 = 0x00;
-				updated = FALSE;
-				countLocal = countShared;
-				// turn on input capture interrupt
-				TIMSK4 = _BV(ICIE4);
-				// reset the shared counter
-				countShared = 0;
-				countTotal += countLocal;
-			}
-			//reset counter
-			int16_t v = chrip();
-			if(v>=0){
-				SET_AIN1_PIN_1(LOW);
-				PWM(v);
-			}else{
-				SET_AIN1_PIN_1(HIGH);
-				PWM(1023+v);
-			}
-			//if the count is not updated, the vel is 0
-			vel.data = DEGREES_PER_PULSE*countLocal/dt;
-			degree.data = (countTotal/ONE_REVOLUTION)*360+countTotal%ONE_REVOLUTION*DEGREES_PER_PULSE;
-			volt.data = v*TO_VOLTAGE;
-			current.data = getCueent();
-			#if DEBUG
-				Serial.print(degree.data);
-				Serial.print(",");
-				Serial.print(vel.data);
-				Serial.print(",");
-				Serial.print(volt.data);
-				Serial.print(",");
-				Serial.println(current.data);
-			#else
-				Serial.write(PACKAGE_HEAD);
-				Serial.write(degree.bytes,4);
-				Serial.write(vel.bytes,4);
-				Serial.write(current.bytes,4);
-				Serial.write(volt.bytes,4);
-				Serial.write(PACKAGE_TAIL);
-			#endif
-		}
-	}else{
-		SET_STBY_PIN(LOW);
+	if(Serial.available()){
+		ref = Serial.parseFloat();
 	}
-			
-	// if(Serial.available()){
-	// 	int v = Serial.parseInt();
-	// 	if(v & NEGATIVE_MASK){
-	// 		SET_AIN2_PIN_1(LOW);
-	// 		SET_AIN1_PIN_1(HIGH);
-	// 		PWM(-v);
-	// 	}else{
-	// 		SET_AIN2_PIN_1(HIGH);
-	// 		SET_AIN1_PIN_1(LOW);
-	// 		PWM(v);
-	// 	}
-	// }
+	if(output){
+		output = FALSE;
+		if(updated){
+			// turn off input capture interrupt
+			TIMSK4 = 0x00;
+			updated = FALSE;
+			countLocal = countShared;
+			// turn on input capture interrupt
+			TIMSK4 = _BV(ICIE4);
+		}
+		angle.data = (countLocal/ONE_REVOLUTION)*MY_2PI+countLocal%ONE_REVOLUTION*RADIANS_PER_PULSE;
+		// angle.data = butterworth(angle.data);
+		int16_t v = -controller(ref,angle.data);
+		if(v>=0){
+			SET_AIN1_PIN_1(LOW);
+			PWM(v);
+		}else{
+			SET_AIN1_PIN_1(HIGH);
+			PWM(1023+v);
+		}
+		#if DEBUG
+			Serial.println(angle.data);
+		#else
+			Serial.write(PACKAGE_HEAD);
+			Serial.write(angle.bytes,4);
+			Serial.write(PACKAGE_TAIL);
+		#endif
+	}
 }
 
-inline int16_t chrip(){
-	int16_t tmp = 1023*sin(2*MY_PI*k*t*t);
-	t += dt;
+/*
+	Compute the control signal in PWM 
+	@param ref: reference 
+	@param feedback: angle
+	@return the PWM signal
+*/
+inline int16_t controller(float ref, float feedback){
+	#if CONTROLLER == PIDF
+		float v = kp*(b*ref-feedback)+integrator(ref-feedback-k_anti*diff)+PIDFderivative(kd*(c*ref-feedback));
+	#elif CONTROLLER == PI
+		float error = ref-feedback;
+		float v = kp*error+integrator(error-k_anti*diff);	
+	#endif
+
+	if(v>SATURATION){
+		diff = v-SATURATION;
+		v = SATURATION;
+	}else if(v<-SATURATION){
+		diff = v-SATURATION;
+		v = -SATURATION;
+	}else
+		diff = 0;
+	return 1023*(v/SATURATION);
+}
+
+inline float integrator(float u_k){
+	float tmp = int_y_k;
+	int_y_k = int_y_k + ki*dt*u_k;
 	return tmp;
 }
 
-void INA219Setup(){
-	I2CSetup(ARDUINO_ADDRESS,400);
-	
-	startTrans(INA219_ADDRESS,WRITE);
-	write(CONFIG_REG);
-	//change the Bus Voltage Range to 16V and shunt voltage to 80mV (max 0.8A)
-	write(0x9);	
-	write(0x1F,true);	
-
-	//program the calibration registe, max expected 0.8A
-	startTrans(INA219_ADDRESS,WRITE);
-	write(CALIB_REG);
-	write(0x41);	
-	write(0x89,true);	
+inline float PIDFderivative(float u_k){
+	de_y_k_1 = ((Tf-dt)*de_y_k_1+kd*u_k-kd*de_u_k_1)/Tf;
+	de_u_k_1 = u_k;
+	return de_y_k_1;
 }
 
-inline float getVolt(){
-	int16_t voltRegValue;
-	startTrans(INA219_ADDRESS,WRITE);
-	write(BUS_VOL_REG);
-	requestFrom(INA219_ADDRESS,1,true);
-	voltRegValue = ((readBuffer()<<8) | readBuffer())>>3;
-	if(voltRegValue  & 0x1000)		//check if negative
-		voltRegValue |= 0xE000;
-	return voltRegValue*BUS_VOL_LSB;
-}
-
-inline float getCueent(){
-	int16_t currentRegVal;
-	startTrans(INA219_ADDRESS,WRITE);
-	write(CURRENT_REG);
-	requestFrom(INA219_ADDRESS,1,true);
-	currentRegVal = (readBuffer()<<8) | readBuffer();
-	return currentRegVal*CURRENT_LSB;
+inline float butterworth(float filt_u_k){
+	float tmp = filt_y_k;
+	filt_y_k = -filt_c*filt_y_k-filt_d*filt_y_k_1+filt_a*filt_u_k+filt_b*filt_u_k_1;
+	filt_u_k_1 = filt_u_k;
+	filt_y_k_1 = tmp;
+	return tmp;
 }
 
 // counter 2
