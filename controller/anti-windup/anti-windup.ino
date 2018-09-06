@@ -6,15 +6,25 @@
 #define FALSE 0
 
 #define DEBUG TRUE
+#define OPTICAL_ENCODER 0x01
+#define HALL_EFFECT_ENCODER 0x02
 
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
 
 #define OUTPUT_COMPARE_ENCODER  0xF424 //set to 1s
-#define FACTOR 64285.625f
+
+#define ENCODER HALL_EFFECT_ENCODER
+#if ENCODER == OPTICAL_ENCODER
+#define ONE_REVOLUTION 500//350
+#define DEGREES_PER_PULSE 0.72//1.0286
+#define RADIANS_PER_PULSE 0.012566//0.0179524567
+#elif ENCODER == HALL_EFFECT_ENCODER
 #define ONE_REVOLUTION 350
 #define DEGREES_PER_PULSE 1.0286
 #define RADIANS_PER_PULSE 0.0179524567
+#endif
+
 //X1 Encoding
 #define POSITIVE_DIR 0x40		//bits 5,6 -> 10, actually this is equal to true
 #define NEGATIVE_DIR 0x00		//bits 5,6 -> 00, actually this is false
@@ -65,7 +75,7 @@ typedef union FLOAT{
 
 Float vel,angle;
 
-float ref = 4;
+float ref = 0;
 
 // controller
 #if CONTROLLER == PIDF
@@ -73,14 +83,14 @@ float ref = 4;
 	float de_y_k_1 = 0;		//y[k-1]
 	float de_u_k_1 = 0;		//u[k-1]
 	float diff = 0;			//difference between the wanted control and the actual control
-	float kp = 1.3;
-	float ki = 1.17;
-	float kd = 0.1;
+	float kp = 1.246;
+	float ki = 1.3;
+	float kd = 0.05;
 	float Tf = 0.0237;
 	float b = 0.871;
 	float c = 0.358;
 	float dt = 0.015;
-	float k_anti = 0.06;
+	float k_anti = 0.9;
 #elif CONTROLLER == PI	
 	float int_y_k = 0;		//y[k]
 	float de_y_k_1 = 0;		//y[k-1]

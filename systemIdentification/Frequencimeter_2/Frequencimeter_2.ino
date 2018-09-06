@@ -64,7 +64,7 @@ using namespace TWI;
 
 float t = 0;
 float dt = 0.015;  //15ms
-float k = 0.133;
+float k = 0.1;
 
 void setup(){
 	vel.data = degree.data = volt.data = current.data = 0;
@@ -90,10 +90,10 @@ void loop(){
 				TIMSK4 = 0x00;
 				updated = FALSE;
 				countLocal = countShared;
+				countShared = 0;
 				// turn on input capture interrupt
 				TIMSK4 = _BV(ICIE4);
 				// reset the shared counter
-				countShared = 0;
 				countTotal += countLocal;
 			}
 			//reset counter
