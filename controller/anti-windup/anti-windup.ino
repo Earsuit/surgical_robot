@@ -16,9 +16,9 @@
 
 #define ENCODER HALL_EFFECT_ENCODER
 #if ENCODER == OPTICAL_ENCODER
-#define ONE_REVOLUTION 500//350
-#define DEGREES_PER_PULSE 0.72//1.0286
-#define RADIANS_PER_PULSE 0.012566//0.0179524567
+#define ONE_REVOLUTION 250
+#define DEGREES_PER_PULSE 1.44
+#define RADIANS_PER_PULSE 0.025133
 #elif ENCODER == HALL_EFFECT_ENCODER
 #define ONE_REVOLUTION 350
 #define DEGREES_PER_PULSE 1.0286
@@ -48,8 +48,8 @@
 //measurement interval interrupt
 #define MEASUREMENT_OUTPUT_COMPARE 0xEA6 //3750, 15ms
 
-#define MY_PI 3.14159265358979
 #define MY_2PI 6.2831853072
+#define MY_PI 3.1415926536
 
 #define RUNTIME 150
 
@@ -72,7 +72,7 @@ typedef union FLOAT{
 	float data;
 	uint8_t bytes[4];
 }Float;
-
+//
 Float vel,angle;
 
 float ref = 0;
@@ -83,9 +83,9 @@ float ref = 0;
 	float de_y_k_1 = 0;		//y[k-1]
 	float de_u_k_1 = 0;		//u[k-1]
 	float diff = 0;			//difference between the wanted control and the actual control
-	float kp = 1.246;
-	float ki = 1.3;
-	float kd = 0.05;
+	float kp = 4.9;
+	float ki = 31;
+	float kd = 0.4;
 	float Tf = 0.0237;
 	float b = 0.871;
 	float c = 0.358;
@@ -105,15 +105,6 @@ float ref = 0;
 	float dt = 0.015;
 	float k_anti = 0.005;
 #endif
-
-// butterworth
-float filt_u_k_1 = 0;
-float filt_y_k = 0;
-float filt_y_k_1 = 0;
-float filt_a = 0.0001117;
-float filt_b = 0.0001109;
-float filt_c = -1.979;
-float filt_d = 0.979;
 
 using namespace TWI;
 
@@ -145,8 +136,7 @@ void loop(){
 			TIMSK4 = _BV(ICIE4);
 		}
 		angle.data = (countLocal/ONE_REVOLUTION)*MY_2PI+countLocal%ONE_REVOLUTION*RADIANS_PER_PULSE;
-		// angle.data = butterworth(angle.data);
-		int16_t v = -controller(ref,angle.data);
+		int16_t v = controller(ref,angle.data);
 		if(v>=0){
 			SET_AIN1_PIN_1(LOW);
 			PWM(v);
@@ -155,7 +145,7 @@ void loop(){
 			PWM(1023+v);
 		}
 		#if DEBUG
-			Serial.println(angle.data);
+			Serial.println(angle.data*180/MY_PI);
 		#else
 			Serial.write(PACKAGE_HEAD);
 			Serial.write(angle.bytes,4);
@@ -201,14 +191,6 @@ inline float PIDFderivative(float u_k){
 	return de_y_k_1;
 }
 
-inline float butterworth(float filt_u_k){
-	float tmp = filt_y_k;
-	filt_y_k = -filt_c*filt_y_k-filt_d*filt_y_k_1+filt_a*filt_u_k+filt_b*filt_u_k_1;
-	filt_u_k_1 = filt_u_k;
-	filt_y_k_1 = tmp;
-	return tmp;
-}
-
 // counter 2
 void PWM_setup(){
 	// Fasr PWM Mode, Set OC2B on Compare Match when up-counting Clear OC2A on Compare Match when down-counting,
@@ -228,13 +210,10 @@ void PWM(uint16_t value){
 	OCR5A = value;
 }
 
-void encoderClockSetup(){
-    //Timer/Counter 4
-    TCCR4A = 0x00;
-    TCCR4B = (_BV(WGM42)) | (_BV(CS42)) | (_BV(ICES4));  //CTC mode, clk/256, rising (positive) edge will trigger the capture.
-    OCR4A = OUTPUT_COMPARE_ENCODER; //set to 1s
-    TCNT4 = 0x00; //initialise the counter
-	TIMSK4 = _BV(ICIE4);   //enable Input Capture Interrupt
+void pinChangeInterruptSetup(){
+	//The rising edge of INT0 generates asynchronously an interrupt request
+	EICRA = _BV(ISC00) | _BV(ISC01);
+	EIMSK = _BV(INT0);
 }
 
 void measurementIntervalSetup(){
@@ -256,18 +235,18 @@ void calculateIntervalSetup(){
 
 void timerSetup(){
 	cli();
-	encoderClockSetup();
+	pinChangeInterruptSetup();
 	measurementIntervalSetup();
 	// calculateIntervalSetup();
 	sei();
 }
 
-ISR(TIMER4_CAPT_vect){
+ISR(TIMER1_COMPA_vect){
+	output = TRUE;
+}
+
+ISR(INT0_vect){
 	encoderPulseShared = READ_C2_1;
 	countShared = (encoderPulseShared)?countShared-1:countShared+1;
 	updated = TRUE;
-}
-
-ISR(TIMER1_COMPA_vect){
-	output = TRUE;
 }
