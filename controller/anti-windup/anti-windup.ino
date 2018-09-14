@@ -16,11 +16,11 @@
 
 #define ENCODER HALL_EFFECT_ENCODER
 #if ENCODER == OPTICAL_ENCODER
-#define ONE_REVOLUTION 250
+#define ONE_REVOLUTION 250.0
 #define DEGREES_PER_PULSE 1.44
 #define RADIANS_PER_PULSE 0.025133
 #elif ENCODER == HALL_EFFECT_ENCODER
-#define ONE_REVOLUTION 350
+#define ONE_REVOLUTION 44700.0f
 #define DEGREES_PER_PULSE 1.0286
 #define RADIANS_PER_PULSE 0.0179524567
 #endif
@@ -67,6 +67,8 @@ volatile int32_t countShared = 0;
 volatile uint8_t output = FALSE;
 volatile uint8_t updated = FALSE;
 int32_t countLocal = 0;
+int32_t prev_countLocal = 0;
+int16_t prev_v = 0;
 
 typedef union FLOAT{
 	float data;
@@ -83,14 +85,14 @@ float ref = 0;
 	float de_y_k_1 = 0;		//y[k-1]
 	float de_u_k_1 = 0;		//u[k-1]
 	float diff = 0;			//difference between the wanted control and the actual control
-	float kp = 4.9;
-	float ki = 31;
-	float kd = 0.4;
+	float kp = 17.5;
+	float ki = 5;
+	float kd = 0.6;
 	float Tf = 0.0237;
 	float b = 0.871;
 	float c = 0.358;
 	float dt = 0.015;
-	float k_anti = 0.9;
+	float k_anti = 1;
 #elif CONTROLLER == PI	
 	float int_y_k = 0;		//y[k]
 	float de_y_k_1 = 0;		//y[k-1]
@@ -129,14 +131,26 @@ void loop(){
 		output = FALSE;
 		if(updated){
 			// turn off input capture interrupt
-			TIMSK4 = 0x00;
+			cli();
 			updated = FALSE;
 			countLocal = countShared;
 			// turn on input capture interrupt
-			TIMSK4 = _BV(ICIE4);
+			sei();
 		}
-		angle.data = (countLocal/ONE_REVOLUTION)*MY_2PI+countLocal%ONE_REVOLUTION*RADIANS_PER_PULSE;
+		angle.data = (countLocal/ONE_REVOLUTION)*MY_2PI;
+		
 		int16_t v = controller(ref,angle.data);
+		if(prev_countLocal == countLocal && v!=0){
+			if(v>0){
+				v += 50;
+				if(v-prev_v<2)
+					v += 70;
+				
+			}else{
+				v = -280;
+			}
+		}
+		prev_v = v;
 		if(v>=0){
 			SET_AIN1_PIN_1(LOW);
 			PWM(v);
@@ -151,6 +165,7 @@ void loop(){
 			Serial.write(angle.bytes,4);
 			Serial.write(PACKAGE_TAIL);
 		#endif
+		prev_countLocal = countLocal;
 	}
 }
 

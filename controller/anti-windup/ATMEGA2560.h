@@ -12,7 +12,7 @@
 #define PWM_PIN_1 PL3       //D46, OC5A, connect to A1 in
 #define AIN1_PIN_1 PA0      //D22, need to set as an output, connect to A2 in
 #define AIN2_PIN_1 PA1      //D23, need to set as an output, NOT USED
-#define C1_COUNT_PIN_1 PD0  //Phase B, SCL, use INT0
+#define C1_COUNT_PIN_1 PD0  //D21, Phase B, SCL, use INT0
 #define C2_COUNT_PIN_1 PJ0  //Phase A, RXD3, use PCINT9, belongs to PCMSK1, NOT USED
 #define C1_READ_PIN_1 PC5   //D32, need to set as an input, NOT USED
 #define C2_READ_PIN_1 PC6   //Phase A, D31, need to set as an input
