@@ -5,8 +5,6 @@
 #include <stdint.h>
 #include <cstring>
 #include <boost/bind.hpp>
-#include <boost/ref.hpp>
-#include "surgical_robot/motor_feedback.h"
 #include "surgical_robot/motor_commands.h"
 #include "rs232.h"
 
@@ -40,14 +38,12 @@ int main(int argc, char** argv){
     uint8_t buffer[TX_BUFFER_SIZE];
     buffer[0] = PACKAGE_HEAD;
     buffer[TX_BUFFER_SIZE-1] = PACKAGE_TAIL;
+    
     //subscriber
     sub_callback sub_callback = boost::bind(subscriberCallback,buffer,atoi(argv[3]),_1);
     ros::Subscriber motor_command_pub = n.subscribe("motor_command",100,sub_callback);
 
-    // using two threads 
-    ros::AsyncSpinner s(2);
-    s.start();
-    ros::waitForShutdown();
+    ros::spin();
 
     return 0;
 }
