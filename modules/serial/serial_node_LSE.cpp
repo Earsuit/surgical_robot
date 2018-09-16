@@ -13,7 +13,6 @@
 #define DEFAULT_RATE 20
 #define DEFAULT_BAUDRATE 115200
 #define RX_BUFFER_SIZE 18
-#define TX_BUFFER_SIZE 4
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
 #define RX_PACKAGE_LEN 18
@@ -22,8 +21,6 @@
 #define SYSTEM_IDENTIFICATION_LENGTH 4 
 
 int findPackage(uint8_t* buffer,int size);
-void subscriberCallback(int port,const surgical_robot::motor_commandsConstPtr &);
-typedef const boost::function<void(const surgical_robot::motor_commandsConstPtr & )> sub_callback;
 
 void publisherCallback(int ,uint8_t*,ros::Publisher&,surgical_robot::system_identification &,const ros::TimerEvent&);
 typedef const boost::function<void(const ros::TimerEvent&)> pub_callback;
@@ -53,10 +50,6 @@ int main(int argc, char** argv){
     pub_callback publisher_callback =  boost::bind(publisherCallback,atoi(argv[3]),buffer,boost::ref(system_identification_pub),boost::ref(msg),_1);
     ros::Timer timer = n.createTimer(ros::Duration(rate),publisher_callback);
     
-    //subscriber
-    // sub_callback subscriber_callback = boost::bind(subscriberCallback,atoi(argv[3]),_1);
-    // ros::Subscriber motor_command_sub = n.subscribe("motor_command",1000,subscriber_callback);
-
     //using two threads 
     ros::AsyncSpinner s(2);
     s.start();
@@ -75,18 +68,6 @@ inline int findPackage(uint8_t* buffer,int size){
     }
     return NOT_FOUND;
 }
-
-void subscriberCallback(int port,const surgical_robot::motor_commandsConstPtr &msg){
-    ROS_INFO("Commands received: %d, %d",msg->motor_1_v,msg->motor_1_dir);
-    uint8_t buffer[TX_BUFFER_SIZE];
-    int sizef = sizeof(msg->motor_1_v);
-    //only have one motoe in lse 
-    buffer[0] = PACKAGE_HEAD;
-    buffer[1] = msg->motor_1_v;
-    buffer[2] = msg->motor_1_dir;
-    buffer[3] = PACKAGE_TAIL;
-    RS232_SendBuf(port,buffer,TX_BUFFER_SIZE);
-} 
 
 void publisherCallback(int port,uint8_t* buffer,ros::Publisher& pub,surgical_robot::system_identification & msg,const ros::TimerEvent& timer){
     int numOfBytes = RS232_PollComport(port,buffer,RX_BUFFER_SIZE);
