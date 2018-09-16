@@ -21,7 +21,7 @@ int main(int argc, char** argv){
     // rate = rate>0?rate:RATE_LOWER_LIMIT;
     // ros::Rate loop_rate(rate);
 
-    ros::Publisher motor_commands_pub = n.advertise<surgical_robot::motor_feedback>("motor_commands",100);
+    ros::Publisher motor_commands_pub = n.advertise<surgical_robot::motor_commands>("motor_commands",100);
     surgical_robot::motor_commands msg;
 
     sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),_1);
