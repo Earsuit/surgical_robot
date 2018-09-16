@@ -13,7 +13,7 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
 typedef const boost::function<void(const surgical_robot::end_effector_posConstPtr & )> sub_callback;
 
 int main(int argc, char** argv){
-    ros::init(argc,argv,"inverse kinematics");
+    ros::init(argc,argv,"inverse_kinematics");
     ros::NodeHandle n;
 
     //loop rate

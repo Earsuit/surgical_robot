@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(inverseKinematics)
+project(inverse_kinematics)
 
 add_executable(${PROJECT_NAME} "inverse_kinematics_node.cpp")
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
