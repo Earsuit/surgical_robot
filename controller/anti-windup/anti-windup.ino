@@ -21,8 +21,8 @@
 #define RADIANS_PER_PULSE 0.025133
 #elif ENCODER == HALL_EFFECT_ENCODER
 #define ONE_REVOLUTION 44700.0f
-#define DEGREES_PER_PULSE 1.0286
-#define RADIANS_PER_PULSE 0.0179524567
+#define DEGREES_PER_PULSE 0.00805
+#define RADIANS_PER_PULSE 0.00014
 #endif
 
 //X1 Encoding
@@ -57,7 +57,6 @@
 
 #define SATURATION 6.8
 
-//
 #define PIDF 0x01
 #define PI 0x02
 #define CONTROLLER PIDF
@@ -67,15 +66,15 @@ volatile int32_t countShared = 0;
 volatile uint8_t output = FALSE;
 volatile uint8_t updated = FALSE;
 int32_t countLocal = 0;
-int32_t prev_countLocal = 0;
-int16_t prev_v = 0;
+int32_t prev_count = 0;
 
 typedef union FLOAT{
 	float data;
 	uint8_t bytes[4];
 }Float;
 //
-Float vel,angle;
+Float angle;
+float vel = 0;
 
 float ref = 0;
 
@@ -138,19 +137,14 @@ void loop(){
 			sei();
 		}
 		angle.data = (countLocal/ONE_REVOLUTION)*MY_2PI;
-		
 		int16_t v = controller(ref,angle.data);
-		if(prev_countLocal == countLocal && v!=0){
+		if(prev_count == countLocal && abs(v)<280 && v!=0){
 			if(v>0){
-				v += 50;
-				if(v-prev_v<2)
-					v += 70;
-				
-			}else{
-				v = -280;
+				v += 150;
+			}else if(v<0){
+				v -= 200;
 			}
 		}
-		prev_v = v;
 		if(v>=0){
 			SET_AIN1_PIN_1(LOW);
 			PWM(v);
@@ -165,7 +159,7 @@ void loop(){
 			Serial.write(angle.bytes,4);
 			Serial.write(PACKAGE_TAIL);
 		#endif
-		prev_countLocal = countLocal;
+		prev_count = countLocal;
 	}
 }
 
