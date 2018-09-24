@@ -16,13 +16,11 @@ int main(int argc, char** argv){
     ros::init(argc,argv,"inverse_kinematics");
     ros::NodeHandle n;
 
-    //loop rate
-    // int rate = (argv[1]==NULL)?DEFAULT_RATE:atoi(argv[1]);
-    // rate = rate>0?rate:RATE_LOWER_LIMIT;
-    // ros::Rate loop_rate(rate);
-
     ros::Publisher motor_commands_pub = n.advertise<surgical_robot::motor_commands>("motor_commands",100);
     surgical_robot::motor_commands msg;
+
+    // Create matrix
+
 
     sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),_1);
     ros::Subscriber motor_command_pub = n.subscribe("end_effector_pos",1000,sub_callback);

@@ -67,6 +67,8 @@ volatile uint8_t output = FALSE;
 volatile uint8_t updated = FALSE;
 int32_t countLocal = 0;
 int32_t prev_count = 0;
+int16_t prev_v = 0;
+bool inte= true;
 
 typedef union FLOAT{
 	float data;
@@ -84,7 +86,7 @@ float ref = 0;
 	float de_y_k_1 = 0;		//y[k-1]
 	float de_u_k_1 = 0;		//u[k-1]
 	float diff = 0;			//difference between the wanted control and the actual control
-	float kp = 17.5;
+	float kp = 17;
 	float ki = 5;
 	float kd = 0.6;
 	float Tf = 0.0237;
@@ -127,6 +129,7 @@ void loop(){
 		ref = Serial.parseFloat();
 	}
 	if(output){
+		TCNT3 = 0x00;
 		output = FALSE;
 		if(updated){
 			// turn off input capture interrupt
@@ -138,13 +141,15 @@ void loop(){
 		}
 		angle.data = (countLocal/ONE_REVOLUTION)*MY_2PI;
 		int16_t v = controller(ref,angle.data);
-		if(prev_count == countLocal && abs(v)<280 && v!=0){
+		//overcome the friction
+		if(prev_count == countLocal && abs(v)<400 && v!=0){	
 			if(v>0){
-				v += 150;
+				v += 2*(v+90);
 			}else if(v<0){
-				v -= 200;
+				v -= 2*(v-90);
 			}
 		}
+		prev_count = countLocal;
 		if(v>=0){
 			SET_AIN1_PIN_1(LOW);
 			PWM(v);
@@ -152,6 +157,7 @@ void loop(){
 			SET_AIN1_PIN_1(HIGH);
 			PWM(1023+v);
 		}
+
 		#if DEBUG
 			Serial.println(angle.data*180/MY_PI);
 		#else
@@ -159,7 +165,7 @@ void loop(){
 			Serial.write(angle.bytes,4);
 			Serial.write(PACKAGE_TAIL);
 		#endif
-		prev_count = countLocal;
+		
 	}
 }
 
@@ -246,7 +252,7 @@ void timerSetup(){
 	cli();
 	pinChangeInterruptSetup();
 	measurementIntervalSetup();
-	// calculateIntervalSetup();
+	calculateIntervalSetup();
 	sei();
 }
 
