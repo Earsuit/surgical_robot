@@ -11,9 +11,10 @@
 
 #define OUTPUT_COMPARE_ENCODER  0xF424 //set to 1s
 
-#define ONE_REVOLUTION 44700.0f
-#define DEGREES_PER_PULSE 0.00805
-#define RADIANS_PER_PULSE 0.00014
+#define ONE_REVOLUTION_1 67050.0
+#define ONE_REVOLUTION_2 44700.0
+#define ONE_REVOLUTION_3 44700.0
+#define ONE_REVOLUTION_4 67050.0
 
 //measurement interval interrupt
 #define MEASUREMENT_OUTPUT_COMPARE 0xEA6 //3750, 15ms
@@ -62,7 +63,7 @@ float int_y_k[4] = {0,0,0,0};		//y[k]
 float de_y_k_1[4] = {0,0,0,0};		//y[k-1]
 float de_u_k_1[4] = {0,0,0,0};		//u[k-1]
 float diff[4] = {0,0,0,0};			//difference between the wanted control and the actual control
-float kp[4] = {18,15,15,15};
+float kp[4] = {18,17.5,17,15};
 float ki[4] = {5,5,5,5};
 float kd[4] = {0.6,0.6,0.6,0.6};
 float Tf = 0.0237;
@@ -78,15 +79,19 @@ void setup(){
 	angle_4.data = 0;
 	Serial.begin(115200);
 	SET_AIN1_PIN_1_OUT;
+	SET_AIN2_PIN_1_OUT;
 	SET_C2_READ_PIN_1_IN;
 
 	SET_AIN1_PIN_2_OUT;
+	SET_AIN2_PIN_2_OUT;
 	SET_C2_READ_PIN_2_IN;
 
 	SET_AIN1_PIN_3_OUT;
+	SET_AIN2_PIN_3_OUT;
 	SET_C2_READ_PIN_3_IN;
 
 	SET_AIN1_PIN_4_OUT;
+	SET_AIN2_PIN_4_OUT;
 	SET_C2_READ_PIN_4_IN;
 	PWM_setup();
 	timerSetup();
@@ -95,7 +100,8 @@ void setup(){
 void loop(){
 	if(Serial.available()){
 		// ref_1 = Serial.parseFloat();
-		ref_3 = Serial.parseFloat();
+		ref_2 = Serial.parseFloat();
+		// ref_3 = Serial.parseFloat();
 	}
 	if(output){
 		output = FALSE;
@@ -108,16 +114,16 @@ void loop(){
 				countLocal_2 = countShared_2;
 			if(updated & 0x04)
 				countLocal_3 = countShared_3;
-			if(updated & 0x04)
+			if(updated & 0x08)
 				countLocal_4 = countShared_4;
 			// turn on input capture interrupt
 			updated = 0x00;
 			sei();
 		}
-		angle_1.data = (countLocal_1/ONE_REVOLUTION)*MY_2PI;
-		angle_2.data = (countLocal_2/ONE_REVOLUTION)*MY_2PI;
-		angle_3.data = (countLocal_3/ONE_REVOLUTION)*MY_2PI;
-		angle_4.data = (countLocal_4/ONE_REVOLUTION)*MY_2PI;
+		angle_1.data = (countLocal_1/ONE_REVOLUTION_1)*MY_2PI;
+		angle_2.data = (countLocal_2/ONE_REVOLUTION_2)*MY_2PI;
+		angle_3.data = (countLocal_3/ONE_REVOLUTION_3)*MY_2PI;
+		angle_4.data = (countLocal_4/ONE_REVOLUTION_4)*MY_2PI;
 
 		driveMotor_1(ref_1,angle_1.data);
 		driveMotor_2(ref_2,angle_2.data);
@@ -126,7 +132,11 @@ void loop(){
 		#if DEBUG
 			Serial.print(angle_1.data*180/MY_PI);	
 			Serial.print(" ");
-			Serial.println(angle_3.data*180/MY_PI);
+			Serial.print(angle_2.data*180/MY_PI);
+			Serial.print(" ");
+			Serial.print(angle_3.data*180/MY_PI);	
+			Serial.print(" ");
+			Serial.println(angle_4.data*180/MY_PI);
 		#else
 			Serial.write(PACKAGE_HEAD);
 			Serial.write(angle.bytes,4);
@@ -141,18 +151,21 @@ inline void driveMotor_1(float ref, float feedback){
 	//overcome the friction
 	if(prev_count_1 == countLocal_1 && abs(v)<280 && v!=0){	
 		if(v>0){
-			v += 1.5*(v+90);
+			v += 50;
 		}else if(v<0){
-			v -= 1.5*(v-90);
+			v -= 80;
 		}
 	}
+	
 	prev_count_1 = countLocal_1;
 	if(v>=0){
 		SET_AIN1_PIN_1(LOW);
+		SET_AIN2_PIN_1(HIGH);
 		PWM_1(v);
 	}else{
 		SET_AIN1_PIN_1(HIGH);
-		PWM_1(1023+v);
+		SET_AIN2_PIN_1(LOW);
+		PWM_1(-v);
 	}
 }
 
@@ -161,18 +174,20 @@ inline void driveMotor_2(float ref, float feedback){
 	//overcome the friction
 	if(prev_count_2 == countLocal_2 && abs(v)<280 && v!=0){	
 		if(v>0){
-			v += 2*(v+90);
+			v += 150;
 		}else if(v<0){
-			v -= 2*(v-90);
+			v -= 200;
 		}
 	}
 	prev_count_2 = countLocal_2;
 	if(v>=0){
 		SET_AIN1_PIN_2(LOW);
+		SET_AIN2_PIN_2(HIGH);
 		PWM_2(v);
 	}else{
 		SET_AIN1_PIN_2(HIGH);
-		PWM_2(1023+v);
+		SET_AIN2_PIN_2(LOW);
+		PWM_2(-v);
 	}
 }
 
@@ -181,18 +196,20 @@ inline void driveMotor_3(float ref, float feedback){
 	//overcome the friction
 	if(prev_count_3 == countLocal_3 && abs(v)<280 && v!=0){	
 		if(v>0){
-			v += 2*(v+90);
+			v += 1.5*(v+90);
 		}else if(v<0){
-			v -= 2*(v-90);
+			v -= 1.5*(v-90);
 		}
 	}
 	prev_count_3 = countLocal_3;
 	if(v>=0){
 		SET_AIN1_PIN_3(LOW);
+		SET_AIN2_PIN_3(HIGH);
 		PWM_3(v);
 	}else{
 		SET_AIN1_PIN_3(HIGH);
-		PWM_3(1023+v);
+		SET_AIN2_PIN_3(LOW);
+		PWM_3(-v);
 	}
 }
 
@@ -232,6 +249,7 @@ void PWM_setup(){
 	SET_PWM_PIN_1_OUTPUT;
 	SET_PWM_PIN_2_OUTPUT;
 	SET_PWM_PIN_3_OUTPUT;
+	SET_PWM_PIN_4_OUTPUT;
 	
 	// 10-bit Fasr PWM Mode, Set OC5A on Compare Match when up-counting Clear OC2A on Compare Match when down-counting,
 	// TOP = 0x3FF, CLK/8
@@ -243,6 +261,10 @@ void PWM_setup(){
 
 	TCCR3A = _BV(COM3A1)  | _BV(WGM31) | _BV(WGM30);
 	TCCR3B = _BV(CS31) | _BV(WGM32);
+
+	// motor 4, 8-bit 
+	TCCR0A = _BV(COM0B1)  | _BV(WGM01) | _BV(WGM00);
+	TCCR0B = _BV(CS00) | _BV(CS01);
 }
 
 inline void PWM_1(uint16_t value){
@@ -255,6 +277,10 @@ inline void PWM_2(uint16_t value){
 
 inline void PWM_3(uint16_t value){
 	OCR3A = value;
+}
+
+inline void PWM_4(uint8_t value){
+	OCR0A = value;
 }
 
 void pinChangeInterruptSetup(){
