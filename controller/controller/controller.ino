@@ -99,9 +99,9 @@ void setup(){
 
 void loop(){
 	if(Serial.available()){
-		// ref_1 = Serial.parseFloat();
-		ref_2 = Serial.parseFloat();
-		// ref_3 = Serial.parseFloat();
+		ref_1 = Serial.parseFloat();
+		// ref_2 = Serial.parseFloat();
+		ref_3 = Serial.parseFloat(); 
 	}
 	if(output){
 		output = FALSE;
@@ -287,6 +287,8 @@ void pinChangeInterruptSetup(){
 	//The rising edge of INT0 generates asynchronously an interrupt request
 	EICRA = _BV(ISC00) | _BV(ISC01) | _BV(ISC10) | _BV(ISC11) | _BV(ISC20) | _BV(ISC21) | _BV(ISC30) | _BV(ISC31);
 	EIMSK = _BV(INT0) | _BV(INT1) | _BV(INT2) | _BV(INT3);
+	// EICRA = _BV(ISC00) | _BV(ISC01) | _BV(ISC10) | _BV(ISC11);
+	// EIMSK = _BV(INT0)| _BV(INT1) ;
 }
 
 void measurementIntervalSetup(){
