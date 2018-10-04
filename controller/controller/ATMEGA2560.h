@@ -25,7 +25,7 @@
 #define C1_COUNT_PIN_3 PD2  //D19, Phase B, use INT2
 #define C2_READ_PIN_3 PC4   //Phase A, D33, need to set as an input
 //Motor 4
-#define PWM_PIN_4 PB7       //D13, OC0A, connect to A1 in
+#define PWM_PIN_4 PG5       //D4, OC0B, connect to A1 in
 #define AIN1_PIN_4 PA6      //D28, need to set as an output, connect to A2 in
 #define AIN2_PIN_4 PA7      //D29, need to set as an output, connect to A2 in
 #define C1_COUNT_PIN_4 PD3  //D18, Phase B, use INT3
@@ -52,7 +52,7 @@
 #define SET_AIN1_PIN_4_OUT          SET(DDRA,_BV(AIN1_PIN_4),OUT)
 #define SET_AIN2_PIN_4_OUT          SET(DDRA,_BV(AIN2_PIN_4),OUT)
 #define SET_C2_READ_PIN_4_IN        SET(DDRC,_BV(C2_READ_PIN_4),IN)
-#define SET_PWM_PIN_4_OUTPUT        SET(DDRB,_BV(PWM_PIN_4),OUT)
+#define SET_PWM_PIN_4_OUTPUT        SET(DDRG,_BV(PWM_PIN_4),OUT)
 
 #define SET_AIN1_PIN_1(VAL) SET(PORTA,_BV(AIN1_PIN_1),VAL)
 #define SET_AIN2_PIN_1(VAL) SET(PORTA,_BV(AIN2_PIN_1),VAL)
@@ -61,7 +61,7 @@
 #define SET_AIN1_PIN_3(VAL) SET(PORTA,_BV(AIN1_PIN_3),VAL)
 #define SET_AIN2_PIN_3(VAL) SET(PORTA,_BV(AIN2_PIN_3),VAL)
 #define SET_AIN1_PIN_4(VAL) SET(PORTA,_BV(AIN1_PIN_4),VAL)
-#define SET_AIN2_PIN_4(VAL) SET(PORTA,_BV(AIN2_PIN_3),VAL)
+#define SET_AIN2_PIN_4(VAL) SET(PORTA,_BV(AIN2_PIN_4),VAL)
 
 #define READ_C2_1 GET(PINC,_BV(C2_READ_PIN_1))
 #define READ_C2_2 GET(PINC,_BV(C2_READ_PIN_2))

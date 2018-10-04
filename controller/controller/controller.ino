@@ -11,9 +11,9 @@
 
 #define OUTPUT_COMPARE_ENCODER  0xF424 //set to 1s
 
-#define ONE_REVOLUTION_1 67050.0
+#define ONE_REVOLUTION_1 44700.0
 #define ONE_REVOLUTION_2 44700.0
-#define ONE_REVOLUTION_3 44700.0
+#define ONE_REVOLUTION_3 67050.0
 #define ONE_REVOLUTION_4 67050.0
 
 //measurement interval interrupt
@@ -24,8 +24,6 @@
 
 #define SATURATION 6.8
 
-#define PIDF 0x01
-#define PI 0x02
 #define CONTROLLER PIDF
 
 volatile uint8_t encoderPulseShared_1 = 0x00;
@@ -63,7 +61,7 @@ float int_y_k[4] = {0,0,0,0};		//y[k]
 float de_y_k_1[4] = {0,0,0,0};		//y[k-1]
 float de_u_k_1[4] = {0,0,0,0};		//u[k-1]
 float diff[4] = {0,0,0,0};			//difference between the wanted control and the actual control
-float kp[4] = {18,17.5,17,15};
+float kp[4] = {17,17.5,18,18};
 float ki[4] = {5,5,5,5};
 float kd[4] = {0.6,0.6,0.6,0.6};
 float Tf = 0.0237;
@@ -100,8 +98,9 @@ void setup(){
 void loop(){
 	if(Serial.available()){
 		ref_1 = Serial.parseFloat();
-		// ref_2 = Serial.parseFloat();
+		ref_2 = Serial.parseFloat();
 		ref_3 = Serial.parseFloat(); 
+		ref_4 = Serial.parseFloat(); 
 	}
 	if(output){
 		output = FALSE;
@@ -128,6 +127,7 @@ void loop(){
 		driveMotor_1(ref_1,angle_1.data);
 		driveMotor_2(ref_2,angle_2.data);
 		driveMotor_3(ref_3,angle_3.data);
+		driveMotor_4(ref_4,angle_4.data);
 
 		#if DEBUG
 			Serial.print(angle_1.data*180/MY_PI);	
@@ -151,9 +151,9 @@ inline void driveMotor_1(float ref, float feedback){
 	//overcome the friction
 	if(prev_count_1 == countLocal_1 && abs(v)<280 && v!=0){	
 		if(v>0){
-			v += 50;
+			v += 150;
 		}else if(v<0){
-			v -= 80;
+			v -= 200;
 		}
 	}
 	
@@ -174,9 +174,9 @@ inline void driveMotor_2(float ref, float feedback){
 	//overcome the friction
 	if(prev_count_2 == countLocal_2 && abs(v)<280 && v!=0){	
 		if(v>0){
-			v += 150;
+			v += 1.5*(v+90);
 		}else if(v<0){
-			v -= 200;
+			v -= 1.5*(v-90);
 		}
 	}
 	prev_count_2 = countLocal_2;
@@ -196,9 +196,9 @@ inline void driveMotor_3(float ref, float feedback){
 	//overcome the friction
 	if(prev_count_3 == countLocal_3 && abs(v)<280 && v!=0){	
 		if(v>0){
-			v += 1.5*(v+90);
+			v += 50;
 		}else if(v<0){
-			v -= 1.5*(v-90);
+			v -= 80;
 		}
 	}
 	prev_count_3 = countLocal_3;
@@ -210,6 +210,28 @@ inline void driveMotor_3(float ref, float feedback){
 		SET_AIN1_PIN_3(HIGH);
 		SET_AIN2_PIN_3(LOW);
 		PWM_3(-v);
+	}
+}
+
+inline void driveMotor_4(float ref, float feedback){
+	int16_t v = controller(3,ref,feedback);
+	//overcome the friction
+	if(prev_count_4 == countLocal_4 && abs(v)<70 && v!=0){	
+		if(v>0){
+			v += 20;
+		}else if(v<0){
+			v -= 30;
+		}
+	}
+	prev_count_4 = countLocal_4;
+	if(v>=0){
+		SET_AIN1_PIN_4(LOW);
+		SET_AIN2_PIN_4(HIGH);
+		PWM_4(v);
+	}else{
+		SET_AIN1_PIN_4(HIGH);
+		SET_AIN2_PIN_4(LOW);
+		PWM_4(-v);
 	}
 }
 
@@ -230,6 +252,8 @@ inline int16_t controller(int motor, float ref, float feedback){
 		v = -SATURATION;
 	}else
 		diff[motor] = 0;
+	if(motor==3)
+		return 255*(v/SATURATION);
 	return 1023*(v/SATURATION);
 }
 
@@ -263,7 +287,7 @@ void PWM_setup(){
 	TCCR3B = _BV(CS31) | _BV(WGM32);
 
 	// motor 4, 8-bit 
-	TCCR0A = _BV(COM0B1)  | _BV(WGM01) | _BV(WGM00);
+	TCCR0A =  _BV(COM0B1)  | _BV(WGM01) | _BV(WGM00);
 	TCCR0B = _BV(CS00) | _BV(CS01);
 }
 
@@ -280,7 +304,7 @@ inline void PWM_3(uint16_t value){
 }
 
 inline void PWM_4(uint8_t value){
-	OCR0A = value;
+	OCR0B = value;
 }
 
 void pinChangeInterruptSetup(){
