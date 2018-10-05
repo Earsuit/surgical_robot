@@ -24,8 +24,6 @@
 
 #define SATURATION 6.8
 
-#define CONTROLLER PIDF
-
 volatile uint8_t encoderPulseShared_1 = 0x00;
 volatile uint8_t encoderPulseShared_2 = 0x00;
 volatile uint8_t encoderPulseShared_3 = 0x00;
@@ -311,8 +309,6 @@ void pinChangeInterruptSetup(){
 	//The rising edge of INT0 generates asynchronously an interrupt request
 	EICRA = _BV(ISC00) | _BV(ISC01) | _BV(ISC10) | _BV(ISC11) | _BV(ISC20) | _BV(ISC21) | _BV(ISC30) | _BV(ISC31);
 	EIMSK = _BV(INT0) | _BV(INT1) | _BV(INT2) | _BV(INT3);
-	// EICRA = _BV(ISC00) | _BV(ISC01) | _BV(ISC10) | _BV(ISC11);
-	// EIMSK = _BV(INT0)| _BV(INT1) ;
 }
 
 void measurementIntervalSetup(){
