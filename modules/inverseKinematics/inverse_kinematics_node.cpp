@@ -20,7 +20,7 @@ int main(int argc, char** argv){
     // Create the instance of publisher and msg
     ros::Publisher motor_commands_pub = n.advertise<surgical_robot::motor_commands>("motor_commands",100);
     surgical_robot::motor_commands msg;
-    
+
     sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),_1);
     ros::Subscriber motor_command_pub = n.subscribe("end_effector_pos",1000,sub_callback);
 
@@ -29,9 +29,9 @@ int main(int argc, char** argv){
 }
 
 void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg,const surgical_robot::end_effector_posConstPtr & pos){
-    float xd = pos.x;
-    float yd = pos.y;
-    float zd = pos.z;
+    float xd = pos->x;
+    float yd = pos->y;
+    float zd = pos->z;
 
     float L1 = 0.048;
     float L2 = 0.042;
@@ -44,6 +44,6 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     msg.motor_1 = theta1;
     msg.motor_2 = theta2;
     msg.motor_3 = theta3;
-    msg.motor_4 = pos.grab;
+    msg.motor_4 = pos->grab;
     motor_commands_pub.publish(msg);
 }
