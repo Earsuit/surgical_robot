@@ -29,6 +29,7 @@ int main(int argc, char** argv){
 }
 
 void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg,const surgical_robot::end_effector_posConstPtr & pos){
+    ROS_INFO("End effector position received: %f, %f, %f", pos->x,pos->y,pos->z);
     float xd = pos->x;
     float yd = pos->y;
     float zd = pos->z;
@@ -45,5 +46,6 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     msg.motor_2 = theta2;
     msg.motor_3 = theta3;
     msg.motor_4 = pos->grab;
+    ROS_INFO("Motor angles: %f, %f, %f",theta1,theta2,theta3);
     motor_commands_pub.publish(msg);
 }
