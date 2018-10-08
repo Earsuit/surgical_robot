@@ -2,11 +2,6 @@
 #include <ros/console.h>
 #include <sstream>
 #include <cstdlib>
-#include <stdint.h>
-#include <cstring>
-#include <cmath>
-#include <boost/bind.hpp>
-#include <boost/ref.hpp>
 #include "surgical_robot/end_effector_pos.h"
 #include "SPI.h"
 
@@ -53,4 +48,6 @@ int main(int argc,char** argv){
         ros::spinOnce();
         loop_rate.sleep();
     }
+
+    SpiClosePort(0);
 }
