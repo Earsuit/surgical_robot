@@ -8,6 +8,7 @@
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
 #include "surgical_robot/end_effector_pos.h"
+#include "SPI.h"
 
 #define MIDDLE 512
 #define SCALE 1000
