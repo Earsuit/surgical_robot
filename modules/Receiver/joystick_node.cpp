@@ -47,7 +47,7 @@ int main(int argc,char** argv){
         msg.x += ((output[0]>MIDDLE)?output[0]%MIDDLE:-output[0]%MIDDLE)/SCALE;
         msg.y += ((output[1]>MIDDLE)?output[1]%MIDDLE:-output[1]%MIDDLE)/SCALE;
         msg.z += ((output[2]>MIDDLE)?output[0]%MIDDLE:-output[2]%MIDDLE)/SCALE;
-        msg.grab = ((output[2]>MIDDLE)?1:0;
+        msg.grab = (output[2]>MIDDLE)?1:0;
         motor_commands_pub(msg);
         ros::spinOnce();
         loop_rate.sleep();
