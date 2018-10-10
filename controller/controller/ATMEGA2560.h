@@ -18,7 +18,7 @@
 #define AIN2_PIN_2 PA3      //D25, need to set as an output
 #define C1_COUNT_PIN_2 PD1  //D20, Phase B, SDA, use INT1
 #define C2_READ_PIN_2 PC5   //Phase A, D32, need to set as an input
-//Motor 3
+//Motor 3  
 #define PWM_PIN_3 PE3       //D5, OC3A, connect to A1 in
 #define AIN1_PIN_3 PA4      //D26, need to set as an output, connect to A2 in
 #define AIN2_PIN_3 PA5      //D27, need to set as an output, connect to A2 in

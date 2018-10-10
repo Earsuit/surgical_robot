@@ -11,7 +11,7 @@
 
 #define OUTPUT_COMPARE_ENCODER  0xF424 //set to 1s
 
-#define ONE_REVOLUTION_1 44700.0
+#define ONE_REVOLUTION_1 89400.0
 #define ONE_REVOLUTION_2 44700.0
 #define ONE_REVOLUTION_3 67050.0
 #define ONE_REVOLUTION_4 67050.0
@@ -128,23 +128,23 @@ void loop(){
 		driveMotor_1(ref[0].data,angle_1.data);
 		driveMotor_2(ref[1].data,angle_2.data);
 		driveMotor_3(ref[2].data,angle_3.data);
-		// driveMotor_4(ref_4,angle_4.data);
+		driveMotor_4(ref[3].data);
 
 		#if DEBUG
-			// Serial.print(angle_1.data*180/MY_PI);	
-			// Serial.print(" ");
-			// Serial.print(angle_2.data*180/MY_PI);
-			// Serial.print(" ");
-			// Serial.print(angle_3.data*180/MY_PI);	
-			// Serial.print(" ");
-			// Serial.println(angle_4.data*180/MY_PI);
-			Serial2.print(ref[0].data);	
+			Serial2.print(angle_1.data*180/MY_PI);	
 			Serial2.print(" ");
-			Serial2.print(ref[1].data);
+			Serial2.print(angle_2.data*180/MY_PI);
 			Serial2.print(" ");
-			Serial2.print(ref[2].data);	
+			Serial2.print(angle_3.data*180/MY_PI);	
 			Serial2.print(" ");
-			Serial2.println(ref[3].data);
+			Serial2.println(angle_4.data*180/MY_PI);
+			// Serial2.print(ref[0].data);	
+			// Serial2.print(" ");
+			// Serial2.print(ref[1].data);
+			// Serial2.print(" ");
+			// Serial2.print(ref[2].data);	
+			// Serial2.print(" ");
+			// Serial2.println(ref[3].data);
 		#else
 			Serial.write(PACKAGE_HEAD);
 			Serial.write(angle.bytes,4);
@@ -179,14 +179,14 @@ inline void driveMotor_1(float ref, float feedback){
 inline void driveMotor_2(float ref, float feedback){
 	int16_t v = controller(1,ref,feedback);
 	//overcome the friction
-	// if(prev_count_2 == countLocal_2 && abs(v)<280 && v!=0){	
-	// 	if(v>0){
-	// 		v += 50;
-	// 	}else if(v<0){
-	// 		v -= 80;
-	// 	}
-	// }
-	// prev_count_2 = countLocal_2;
+	if(prev_count_2 == countLocal_2 && abs(v)<280 && v!=0){	
+		if(v>0){
+			v += 50;
+		}else if(v<0){
+			v -= 80;
+		}
+	}
+	prev_count_2 = countLocal_2;
 	
 	if(v>=0){
 		SET_AIN1_PIN_2(LOW);
@@ -221,25 +221,15 @@ inline void driveMotor_3(float ref, float feedback){
 	}
 }
 
-inline void driveMotor_4(float ref, float feedback){
-	int16_t v = controller(3,ref,feedback);
-	//overcome the friction
-	if(prev_count_4 == countLocal_4 && abs(v)<70 && v!=0){	
-		if(v>0){
-			v += 20;
-		}else if(v<0){
-			v -= 30;
-		}
-	}
-	prev_count_4 = countLocal_4;
-	if(v>=0){
+inline void driveMotor_4(float ref){
+	if(ref>=0){
 		SET_AIN1_PIN_4(LOW);
 		SET_AIN2_PIN_4(HIGH);
-		PWM_4(v);
+		PWM_4(uint8_t(ref));
 	}else{
 		SET_AIN1_PIN_4(HIGH);
 		SET_AIN2_PIN_4(LOW);
-		PWM_4(-v);
+		PWM_4(uint8_t(-ref));
 	}
 }
 
