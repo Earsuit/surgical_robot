@@ -73,7 +73,7 @@ void setup(){
 	ref[0].data = 0;
 	ref[1].data = 0;
 	ref[2].data = 0;
-	ref_4 = 0;
+	ref[3].data = 0;
 	Serial.begin(115200);
 	Serial2.begin(115200);
 	SET_AIN1_PIN_1_OUT;
