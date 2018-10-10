@@ -49,8 +49,7 @@ typedef union FLOAT{
 }Float;
 
 Float angle_1,angle_2,angle_3,angle_4;
-Float ref[3];
-uint8_t ref_4;
+Float ref[4];
 
 // controller
 float int_y_k[4] = {0,0,0,0};		//y[k]
@@ -76,7 +75,7 @@ void setup(){
 	ref[2].data = 0;
 	ref_4 = 0;
 	Serial.begin(115200);
-	Serial1.begin(115200);
+	Serial2.begin(115200);
 	SET_AIN1_PIN_1_OUT;
 	SET_AIN2_PIN_1_OUT;
 	SET_C2_READ_PIN_1_IN;
@@ -93,7 +92,7 @@ void setup(){
 	SET_AIN2_PIN_4_OUT;
 	SET_C2_READ_PIN_4_IN;
 	PWM_setup();
-	timerSetup();
+	timerSetup();	
 }
 int count = 0;
 void loop(){
@@ -102,8 +101,7 @@ void loop(){
 		// ref_2 = Serial.parseFloat();
 		// ref_3 = Serial.parseFloat(); 
 		// ref_4 = Serial.parseFloat(); 
-		Serial.readBytes(ref[0].bytes, 12);
-		ref_4 = Serial.read();
+		Serial.readBytes(ref[0].bytes, 16);
 	}
 	if(output){
 		output = FALSE;
@@ -140,13 +138,13 @@ void loop(){
 			// Serial.print(angle_3.data*180/MY_PI);	
 			// Serial.print(" ");
 			// Serial.println(angle_4.data*180/MY_PI);
-			Serial1.print(ref[0].data);	
-			Serial1.print(" ");
-			Serial1.print(ref[1].data);
-			Serial1.print(" ");
-			Serial1.print(ref[2].data);	
-			Serial1.print(" ");
-			Serial1.println(ref_4);
+			Serial2.print(ref[0].data);	
+			Serial2.print(" ");
+			Serial2.print(ref[1].data);
+			Serial2.print(" ");
+			Serial2.print(ref[2].data);	
+			Serial2.print(" ");
+			Serial2.println(ref[3].data);
 		#else
 			Serial.write(PACKAGE_HEAD);
 			Serial.write(angle.bytes,4);
