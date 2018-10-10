@@ -49,17 +49,15 @@ typedef union FLOAT{
 }Float;
 
 Float angle_1,angle_2,angle_3,angle_4;
-float ref_1 = 0;
-float ref_2 = 0;
-float ref_3 = 0;
-float ref_4 = 0;
+Float ref[3];
+uint8_t ref_4;
 
 // controller
 float int_y_k[4] = {0,0,0,0};		//y[k]
 float de_y_k_1[4] = {0,0,0,0};		//y[k-1]
 float de_u_k_1[4] = {0,0,0,0};		//u[k-1]
 float diff[4] = {0,0,0,0};			//difference between the wanted control and the actual control
-float kp[4] = {17,17.5,18,18};
+float kp[4] = {17,18,18,18};
 float ki[4] = {5,5,5,5};
 float kd[4] = {0.6,0.6,0.6,0.6};
 float Tf = 0.0237;
@@ -73,7 +71,12 @@ void setup(){
 	angle_2.data = 0;
 	angle_3.data = 0;
 	angle_4.data = 0;
+	ref[0].data = 0;
+	ref[1].data = 0;
+	ref[2].data = 0;
+	ref_4 = 0;
 	Serial.begin(115200);
+	Serial1.begin(115200);
 	SET_AIN1_PIN_1_OUT;
 	SET_AIN2_PIN_1_OUT;
 	SET_C2_READ_PIN_1_IN;
@@ -92,13 +95,15 @@ void setup(){
 	PWM_setup();
 	timerSetup();
 }
-
+int count = 0;
 void loop(){
 	if(Serial.available()){
-		ref_1 = Serial.parseFloat();
-		ref_2 = Serial.parseFloat();
-		ref_3 = Serial.parseFloat(); 
-		ref_4 = Serial.parseFloat(); 
+		// ref_1 = Serial.parseFloat();
+		// ref_2 = Serial.parseFloat();
+		// ref_3 = Serial.parseFloat(); 
+		// ref_4 = Serial.parseFloat(); 
+		Serial.readBytes(ref[0].bytes, 12);
+		ref_4 = Serial.read();
 	}
 	if(output){
 		output = FALSE;
@@ -122,25 +127,31 @@ void loop(){
 		angle_3.data = (countLocal_3/ONE_REVOLUTION_3)*MY_2PI;
 		angle_4.data = (countLocal_4/ONE_REVOLUTION_4)*MY_2PI;
 
-		driveMotor_1(ref_1,angle_1.data);
-		driveMotor_2(ref_2,angle_2.data);
-		driveMotor_3(ref_3,angle_3.data);
-		driveMotor_4(ref_4,angle_4.data);
+		driveMotor_1(ref[0].data,angle_1.data);
+		driveMotor_2(ref[1].data,angle_2.data);
+		driveMotor_3(ref[2].data,angle_3.data);
+		// driveMotor_4(ref_4,angle_4.data);
 
 		#if DEBUG
-			Serial.print(angle_1.data*180/MY_PI);	
-			Serial.print(" ");
-			Serial.print(angle_2.data*180/MY_PI);
-			Serial.print(" ");
-			Serial.print(angle_3.data*180/MY_PI);	
-			Serial.print(" ");
-			Serial.println(angle_4.data*180/MY_PI);
+			// Serial.print(angle_1.data*180/MY_PI);	
+			// Serial.print(" ");
+			// Serial.print(angle_2.data*180/MY_PI);
+			// Serial.print(" ");
+			// Serial.print(angle_3.data*180/MY_PI);	
+			// Serial.print(" ");
+			// Serial.println(angle_4.data*180/MY_PI);
+			Serial1.print(ref[0].data);	
+			Serial1.print(" ");
+			Serial1.print(ref[1].data);
+			Serial1.print(" ");
+			Serial1.print(ref[2].data);	
+			Serial1.print(" ");
+			Serial1.println(ref_4);
 		#else
 			Serial.write(PACKAGE_HEAD);
 			Serial.write(angle.bytes,4);
 			Serial.write(PACKAGE_TAIL);
 		#endif
-		
 	}
 }
 
@@ -170,14 +181,15 @@ inline void driveMotor_1(float ref, float feedback){
 inline void driveMotor_2(float ref, float feedback){
 	int16_t v = controller(1,ref,feedback);
 	//overcome the friction
-	if(prev_count_2 == countLocal_2 && abs(v)<280 && v!=0){	
-		if(v>0){
-			v += 1.5*(v+90);
-		}else if(v<0){
-			v -= 1.5*(v-90);
-		}
-	}
-	prev_count_2 = countLocal_2;
+	// if(prev_count_2 == countLocal_2 && abs(v)<280 && v!=0){	
+	// 	if(v>0){
+	// 		v += 50;
+	// 	}else if(v<0){
+	// 		v -= 80;
+	// 	}
+	// }
+	// prev_count_2 = countLocal_2;
+	
 	if(v>=0){
 		SET_AIN1_PIN_2(LOW);
 		SET_AIN2_PIN_2(HIGH);

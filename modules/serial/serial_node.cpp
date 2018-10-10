@@ -10,7 +10,7 @@
 
 #define DEFAULT_RATE 20
 #define DEFAULT_BAUDRATE 115200
-#define TX_BUFFER_SIZE 15
+#define TX_BUFFER_SIZE 13
 #define PACKAGE_HEAD 0x51
 #define PACKAGE_TAIL 0x71
 #define RATE_LOWER_LIMIT 1
@@ -35,8 +35,8 @@ int main(int argc, char** argv){
     }
 
     uint8_t buffer[TX_BUFFER_SIZE];
-    buffer[0] = PACKAGE_HEAD;
-    buffer[TX_BUFFER_SIZE-1] = PACKAGE_TAIL;
+    // buffer[0] = PACKAGE_HEAD;
+    // buffer[TX_BUFFER_SIZE-1] = PACKAGE_TAIL;
     
     //subscriber
     sub_callback sub_callback = boost::bind(subscriberCallback,buffer,atoi(argv[3]),_1);
@@ -50,7 +50,7 @@ int main(int argc, char** argv){
 void subscriberCallback(uint8_t* buffer,int port,const surgical_robot::motor_commandsConstPtr &msg){
     ROS_INFO("Commands received: %f, %f, %f, %f", msg->motor_1,msg->motor_2,msg->motor_3,msg->motor_4);
     int sizef = sizeof(msg->motor_1);
-    memcpy(buffer+1,&msg->motor_1,(MOTOR_COMMANDS_LENGTH-1)*sizef);
-    memcpy(buffer+13,&msg->motor_4,sizeof(msg->motor_4));
+    memcpy(buffer,&msg->motor_1,(MOTOR_COMMANDS_LENGTH-1)*sizef);
+    memcpy(buffer+12,&msg->motor_4,sizeof(msg->motor_4));
     RS232_SendBuf(port,buffer,TX_BUFFER_SIZE);
 }
