@@ -48,7 +48,7 @@ int main(int argc, char** argv){
 }
 
 void subscriberCallback(uint8_t* buffer,int port,const surgical_robot::motor_commandsConstPtr &msg){
-    ROS_INFO("Commands received: %f, %f, %f, %f", msg->motor_1,msg->motor_2,msg->motor_3,msg->motor_4);
+    ROS_INFO("Commands received: %f, %f, %f, %d", msg->motor_1,msg->motor_2,msg->motor_3,msg->motor_4);
     int sizef = sizeof(msg->motor_1);
     memcpy(buffer,&msg->motor_1,(MOTOR_COMMANDS_LENGTH-1)*sizef);
     memcpy(buffer+12,&msg->motor_4,sizeof(msg->motor_4));
