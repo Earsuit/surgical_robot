@@ -55,6 +55,7 @@ add_message_files(
   end_effector_pos.msg
   motor_feedback.msg
   system_identification.msg
+  joystic_reading.msg
 )
 
 ## Generate services in the 'srv' folder
