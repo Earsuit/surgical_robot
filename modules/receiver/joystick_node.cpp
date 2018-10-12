@@ -18,6 +18,7 @@ int main(int argc,char** argv){
     // using CS0 pin 
     SpiOpenPort(0);
     unsigned char command[3];
+    int output[4];
 
     while (ros::ok()){
         // x1,y1,x2,y2
