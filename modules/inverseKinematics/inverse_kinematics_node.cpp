@@ -8,10 +8,13 @@
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
 #include "surgical_robot/motor_commands.h"
-#include "surgical_robot/end_effector_pos.h"
+#include "surgical_robot/joystick_reading.h"
 
-void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg,const surgical_robot::end_effector_posConstPtr &);
-typedef const boost::function<void(const surgical_robot::end_effector_posConstPtr & )> sub_callback;
+#define MIDDLE 512
+#define SCALE 1000
+
+void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* ,const surgical_robot::joystick_readingConstPtr &);
+typedef const boost::function<void(const surgical_robot::joystick_readingConstPtr & )> sub_callback;
 
 int main(int argc, char** argv){
     ros::init(argc,argv,"inverse_kinematics");
@@ -21,18 +24,25 @@ int main(int argc, char** argv){
     ros::Publisher motor_commands_pub = n.advertise<surgical_robot::motor_commands>("motor_commands",100);
     surgical_robot::motor_commands msg;
 
-    sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),_1);
-    ros::Subscriber motor_command_pub = n.subscribe("end_effector_pos",1000,sub_callback);
+    // Array to store end effector pos
+    float pos[3] = {115,0,0}
+
+    sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg), pos,_1);
+    ros::Subscriber motor_command_pub = n.subscribe("joystick_reading",1000,sub_callback);
 
     ros::spin();
     return 0;
 }
 
-void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg,const surgical_robot::end_effector_posConstPtr & pos){
-    ROS_INFO("End effector position received: %f, %f, %f", pos->x,pos->y,pos->z);
-    float xd = pos->x;
-    float yd = pos->y;
-    float zd = pos->z;
+void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg,const surgical_robot::joystick_readingConstPtr & joystick){
+    ROS_INFO("Joystick reading received: %f, %f, %f, %f", joystick->joystick_1_x,joystick->joystick_1_y,joystick->joystick_2_x,joystick->joystick_2_y);
+    pos[0] += ((joystick->joystick_1_x > MIDDLE)?joystick->joystick_1_x%MIDDLE:-joystick->joystick_1_x%MIDDLE)/SCALE;
+    pos[1] += ((joystick->joystick_1_y > MIDDLE)?joystick->joystick_1_y%MIDDLE:-joystick->joystick_1_y%MIDDLE)/SCALE;
+    pos[2] += ((joystick->joystick_2_x > MIDDLE)?joystick->joystick_2_x%MIDDLE:-joystick->joystick_2_x%MIDDLE)/SCALE;
+
+    float xd = pos[0];
+    float xy = pos[1];
+    float zd = pos[2];
 
     float L1 = 0.043;
     float L2 = 0.042;
@@ -45,7 +55,7 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     msg.motor_1 = theta1;
     msg.motor_2 = theta2;
     msg.motor_3 = theta3;
-    msg.motor_4 = pos->grab;
-    ROS_INFO("Motor angles: %f, %f, %f",theta1,theta2,theta3);
+    msg.motor_4 = ((joystick->joystick_2_y > MIDDLE)?joystick->joystick_2_y%MIDDLE:-joystick->joystick_2_y%MIDDLE)/SCALE;
+    ROS_INFO("Motor commands: %f, %f, %f, %f",theta1,theta2,theta3,msg.motor_4);
     motor_commands_pub.publish(msg);
 }

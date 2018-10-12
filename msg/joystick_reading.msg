@@ -1,0 +1,4 @@
+uint16 joystick_1_x
+uint16 joystick_1_y
+uint16 joystick_2_x
+uint16 joystick_2_y

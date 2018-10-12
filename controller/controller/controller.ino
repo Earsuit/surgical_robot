@@ -131,13 +131,13 @@ void loop(){
 		driveMotor_4(ref[3].data);
 
 		#if DEBUG
-			Serial2.print(angle_1.data*180/MY_PI);	
-			Serial2.print(" ");
-			Serial2.print(angle_2.data*180/MY_PI);
-			Serial2.print(" ");
-			Serial2.print(angle_3.data*180/MY_PI);	
-			Serial2.print(" ");
-			Serial2.println(angle_4.data*180/MY_PI);
+			// Serial2.print(angle_1.data*180/MY_PI);	
+			// Serial2.print(" ");
+			// Serial2.print(angle_2.data*180/MY_PI);
+			// Serial2.print(" ");
+			// Serial2.print(angle_3.data*180/MY_PI);	
+			// Serial2.print(" ");
+			// Serial2.println(angle_4.data*180/MY_PI);
 			// Serial2.print(ref[0].data);	
 			// Serial2.print(" ");
 			// Serial2.print(ref[1].data);
@@ -187,7 +187,7 @@ inline void driveMotor_2(float ref, float feedback){
 		}
 	}
 	prev_count_2 = countLocal_2;
-	
+	Serial2.println(v);
 	if(v>=0){
 		SET_AIN1_PIN_2(LOW);
 		SET_AIN2_PIN_2(HIGH);

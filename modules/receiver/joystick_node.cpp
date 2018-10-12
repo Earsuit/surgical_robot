@@ -2,11 +2,8 @@
 #include <ros/console.h>
 #include <sstream>
 #include <cstdlib>
-#include "surgical_robot/end_effector_pos.h"
+#include "surgical_robot/joystick_reading.h"
 #include "SPI.h"
-
-#define MIDDLE 512
-#define SCALE 1000
 
 // first argument: loop rate
 int main(int argc,char** argv){
@@ -14,8 +11,8 @@ int main(int argc,char** argv){
     ros::NodeHandle n;
 
     // Create the instance of publisher and msg
-    ros::Publisher motor_commands_pub = n.advertise<surgical_robot::end_effector_pos>("end_effector_pos",100);
-    surgical_robot::end_effector_pos msg;
+    ros::Publisher motor_commands_pub = n.advertise<surgical_robot::joystick_reading>("joystick_reading",100);
+    surgical_robot::joystick_reading msg;
     // in cm
     msg.x = 11.5;
     msg.y = 0;
@@ -40,10 +37,10 @@ int main(int argc,char** argv){
             output[i] =  (0x3FF & ((command[0]& 0x01)<<9) | ((command[1] & 0xFF) << 1) | ((command[2] & 0x80) >> 7));
         }
 
-        msg.x += ((output[0]>MIDDLE)?output[0]%MIDDLE:-output[0]%MIDDLE)/SCALE;
-        msg.y += ((output[1]>MIDDLE)?output[1]%MIDDLE:-output[1]%MIDDLE)/SCALE;
-        msg.z += ((output[2]>MIDDLE)?output[0]%MIDDLE:-output[2]%MIDDLE)/SCALE;
-        msg.grab = (output[2]>MIDDLE)?1:0;
+        msg.joystick_1_x = output[0];
+        msg.joystick_1_y = output[1];
+        msg.joystick_2_x = output[2];
+        msg.joystick_2_y = output[3];
         motor_commands_pub.publish(msg);
         ros::spinOnce();
         loop_rate.sleep();
