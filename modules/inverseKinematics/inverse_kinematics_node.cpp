@@ -25,7 +25,7 @@ int main(int argc, char** argv){
     surgical_robot::motor_commands msg;
 
     // Array to store end effector pos
-    float pos[3] = {115,0,0}
+    float pos[3] = {115,0,0};
 
     sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg), pos,_1);
     ros::Subscriber motor_command_pub = n.subscribe("joystick_reading",1000,sub_callback);
@@ -35,13 +35,13 @@ int main(int argc, char** argv){
 }
 
 void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* pos,const surgical_robot::joystick_readingConstPtr & joystick){
-    ROS_INFO("Joystick reading received: %f, %f, %f, %f", joystick->joystick_1_x,joystick->joystick_1_y,joystick->joystick_2_x,joystick->joystick_2_y);
+    ROS_INFO("Joystick reading received: %d, %d, %d, %d", joystick->joystick_1_x,joystick->joystick_1_y,joystick->joystick_2_x,joystick->joystick_2_y);
     pos[0] += ((joystick->joystick_1_x > MIDDLE)?joystick->joystick_1_x%MIDDLE:-joystick->joystick_1_x%MIDDLE)/SCALE;
     pos[1] += ((joystick->joystick_1_y > MIDDLE)?joystick->joystick_1_y%MIDDLE:-joystick->joystick_1_y%MIDDLE)/SCALE;
     pos[2] += ((joystick->joystick_2_x > MIDDLE)?joystick->joystick_2_x%MIDDLE:-joystick->joystick_2_x%MIDDLE)/SCALE;
 
     float xd = pos[0];
-    float xy = pos[1];
+    float yd = pos[1];
     float zd = pos[2];
 
     float L1 = 0.043;
