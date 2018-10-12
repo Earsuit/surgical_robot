@@ -11,20 +11,12 @@ int main(int argc,char** argv){
     ros::NodeHandle n;
 
     // Create the instance of publisher and msg
-    ros::Publisher motor_commands_pub = n.advertise<surgical_robot::joystick_reading>("joystick_reading",100);
+    ros::Publisher joystick_reading_pub = n.advertise<surgical_robot::joystick_reading>("joystick_reading",100);
     surgical_robot::joystick_reading msg;
-    // in cm
-    msg.x = 11.5;
-    msg.y = 0;
-    msg.z = 0;
-    msg.grab = 0;
     ros::Rate loop_rate(atoi(argv[1]));
 
     // using CS0 pin 
     SpiOpenPort(0);
-    //dx,dy,dz,grab
-    int output[4];
-    unsigned char command[3];
 
     while (ros::ok()){
         // x1,y1,x2,y2
@@ -41,7 +33,7 @@ int main(int argc,char** argv){
         msg.joystick_1_y = output[1];
         msg.joystick_2_x = output[2];
         msg.joystick_2_y = output[3];
-        motor_commands_pub.publish(msg);
+        joystick_reading_pub.publish(msg);
         ros::spinOnce();
         loop_rate.sleep();
     }
