@@ -38,7 +38,7 @@ int main(int argc, char** argv){
 
     ros::spin();
 
-    RS232_CloseComport(atoi(argv[3]));1
+    RS232_CloseComport(atoi(argv[3]));
 
     return 0;
 }
