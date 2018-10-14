@@ -35,6 +35,7 @@ int main(int argc,char** argv){
         msg.joystick_1_y = output[1];
         msg.joystick_2_x = output[2];
         msg.joystick_2_y = output[3];
+        ROS_INFO("Joystick reading: %f, %f, %f, %f.",msg.joystick_1_x,msg.joystick_1_y,msg.joystick_2_x,msg.joystick_2_y);
         joystick_reading_pub.publish(msg);
         ros::spinOnce();
         loop_rate.sleep();
