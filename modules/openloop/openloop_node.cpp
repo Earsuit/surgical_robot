@@ -71,7 +71,7 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     if(msg.motor_4 > 255)
         msg.motor_4 = 255;
     else if (msg.motor_4 < -255)
-        msg.motor_4 = -255
+        msg.motor_4 = -255;
     ROS_INFO("Motor commands (deg): %f, %f, %f, %f",angle[0],angle[1],angle[2],msg.motor_4);
     motor_commands_pub.publish(msg);
 }
