@@ -16,9 +16,10 @@
 #define SCALE 1000.0
 #define MAX 1023.0
 
-void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle,const surgical_robot::joystick_readingConstPtr &);
+void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle, int* middleValue,const surgical_robot::joystick_readingConstPtr &);
 typedef const boost::function<void(const surgical_robot::joystick_readingConstPtr & )> sub_callback;
 
+// Argument: middle for x1,y1,x2,y2 respectively
 int main(int argc, char** argv){
     ros::init(argc,argv,"openloop");
     ros::NodeHandle n;
@@ -29,25 +30,26 @@ int main(int argc, char** argv){
 
     // Array to store the angles for motor 1,2,3
     float angle[3] = {0,0,0};
+    int middleValue[4] = {atoi(argv[1]),atoi(argv[2]),atoi(argv[3]),atoi(argv[4])}
 
-    sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),angle,_1);
+    sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),angle,middleValue,_1);
     ros::Subscriber motor_command_pub = n.subscribe("joystick_reading",1000,sub_callback);
 
     ros::spin();
     return 0;
 }
 
-void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle,const surgical_robot::joystick_readingConstPtr & joystick){
+void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle, int* middleValue,,const surgical_robot::joystick_readingConstPtr & joystick){
     ROS_INFO("Joystick reading received: %d, %d, %d, %d", joystick->joystick_1_x,joystick->joystick_1_y,joystick->joystick_2_x,joystick->joystick_2_y);
     float x1 = joystick->joystick_1_x;
     float y1 = joystick->joystick_1_y;
     float x2 = joystick->joystick_2_x;
     float y2 = joystick->joystick_2_y;
 
-    float x1Diff = (abs(x1 - MIDDLE_1_x)<5) ? 0 : x1 - MIDDLE_1_x;
-    float y1Diff = (abs(y1 - MIDDLE_1_y)<5) ? 0 : y1 - MIDDLE_1_y;
-    float x2Diff = (abs(x2 - MIDDLE_2_x)<5) ? 0 : x2 - MIDDLE_2_x;
-    float y2Diff = (abs(y2 - MIDDLE_2_y)<5) ? 0 : y2 - MIDDLE_2_y; 
+    float x1Diff = (abs(x1 - middleValue[0])<5) ? 0 : x1 - middleValue[0];
+    float y1Diff = (abs(y1 - middleValue[1])<5) ? 0 : y1 - middleValue[1];
+    float x2Diff = (abs(x2 - middleValue[2])<5) ? 0 : x2 - middleValue[2];
+    float y2Diff = (abs(y2 - middleValue[3])<5) ? 0 : y2 - middleValue[3]; 
     
     angle[0] +=  x1Diff / SCALE;
     angle[1] +=  y1Diff / SCALE;
@@ -56,7 +58,7 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     msg.motor_1 = angle[0]*M_PI/180;
     msg.motor_2 = angle[1]*M_PI/180;
     msg.motor_3 = angle[2]*M_PI/180;
-    msg.motor_4 = y2Diff*MAX/MIDDLE_2_y;
+    msg.motor_4 = y2Diff*MAX/middleValue[3];
     ROS_INFO("Motor commands (deg): %f, %f, %f, %f",angle[0],angle[1],angle[2],msg.motor_4);
     motor_commands_pub.publish(msg);
 }
