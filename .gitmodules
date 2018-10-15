@@ -1,0 +1,3 @@
+[submodule "modules/receiver/Peripherals"]
+	path = modules/receiver/Peripherals
+	url = https://github.com/Earsuit/Peripherals.git
