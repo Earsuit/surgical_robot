@@ -3,8 +3,6 @@
 #include <sstream>
 #include <cstdlib>
 #include <stdint.h>
-#include <cstring>
-#include <cmath>
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
 #include "surgical_robot/motor_commands.h"
