@@ -29,7 +29,7 @@ int main(int argc, char** argv){
     // Array to store the angles for motor 1,2,3
     float angle[3] = {0,0,0};
 
-    sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),pos,_1);
+    sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),angle,_1);
     ros::Subscriber motor_command_pub = n.subscribe("joystick_reading",1000,sub_callback);
 
     ros::spin();
