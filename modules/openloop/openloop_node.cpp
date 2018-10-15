@@ -48,6 +48,6 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     msg.motor_2 = angle[1];
     msg.motor_3 = angle[2];
     msg.motor_4 = ((joystick->joystick_2_y > MIDDLE_2_y)?(joystick->joystick_2_y%MIDDLE_2_y)*MAX/MIDDLE_2_y:(-joystick->joystick_2_y%MIDDLE_2_y)*MAX/MIDDLE_2_y);
-    ROS_INFO("Motor commands: %f, %f, %f, %f",theta1,theta2,theta3,msg.motor_4);
+    ROS_INFO("Motor commands: %f, %f, %f, %f",msg.motor_1,msg.motor_2,msg.motor_3,msg.motor_4);
     motor_commands_pub.publish(msg);
 }
