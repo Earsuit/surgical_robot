@@ -8,10 +8,10 @@
 #include "surgical_robot/motor_commands.h"
 #include "surgical_robot/joystick_reading.h"
 
-#define MIDDLE_1_x 527.0
-#define MIDDLE_1_y 520.0
-#define MIDDLE_2_x 523.0
-#define MIDDLE_2_y 506.0
+#define MIDDLE_1_x 527
+#define MIDDLE_1_y 520
+#define MIDDLE_2_x 523
+#define MIDDLE_2_y 506
 #define SCALE 1000.0
 #define MAX 1023.0
 
