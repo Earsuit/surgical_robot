@@ -8,12 +8,12 @@
 #include "surgical_robot/motor_commands.h"
 #include "surgical_robot/joystick_reading.h"
 
-#define MIDDLE_1_x 512
-#define MIDDLE_1_y 512
-#define MIDDLE_2_x 512
-#define MIDDLE_2_y 512
-#define SCALE 1000
-#define MAX 1023
+#define MIDDLE_1_x 527.0
+#define MIDDLE_1_y 520.0
+#define MIDDLE_2_x 523.0
+#define MIDDLE_2_y 506.0
+#define SCALE 1000.0
+#define MAX 1023.0
 
 void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle,const surgical_robot::joystick_readingConstPtr &);
 typedef const boost::function<void(const surgical_robot::joystick_readingConstPtr & )> sub_callback;
