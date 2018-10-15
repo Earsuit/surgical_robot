@@ -30,7 +30,7 @@ int main(int argc, char** argv){
 
     // Array to store the angles for motor 1,2,3
     float angle[3] = {0,0,0};
-    int middleValue[4] = {atoi(argv[1]),atoi(argv[2]),atoi(argv[3]),atoi(argv[4])}
+    int middleValue[4] = {atoi(argv[1]),atoi(argv[2]),atoi(argv[3]),atoi(argv[4])};
 
     sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),angle,middleValue,_1);
     ros::Subscriber motor_command_pub = n.subscribe("joystick_reading",1000,sub_callback);
@@ -39,7 +39,7 @@ int main(int argc, char** argv){
     return 0;
 }
 
-void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle, int* middleValue,,const surgical_robot::joystick_readingConstPtr & joystick){
+void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle, int* middleValue,const surgical_robot::joystick_readingConstPtr & joystick){
     ROS_INFO("Joystick reading received: %d, %d, %d, %d", joystick->joystick_1_x,joystick->joystick_1_y,joystick->joystick_2_x,joystick->joystick_2_y);
     float x1 = joystick->joystick_1_x;
     float y1 = joystick->joystick_1_y;
