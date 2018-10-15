@@ -53,10 +53,10 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     angle[1] +=  y1Diff / SCALE;
     angle[2] +=  x2Diff / SCALE;
 
-    msg.motor_1 = angle[0];
-    msg.motor_2 = angle[1];
-    msg.motor_3 = angle[2];
+    msg.motor_1 = angle[0]*M_PI/180;
+    msg.motor_2 = angle[1]*M_PI/180;
+    msg.motor_3 = angle[2]*M_PI/180;
     msg.motor_4 = y2Diff*MAX/MIDDLE_2_y;
-    ROS_INFO("Motor commands: %f, %f, %f, %f",msg.motor_1,msg.motor_2,msg.motor_3,msg.motor_4);
+    ROS_INFO("Motor commands (deg): %f, %f, %f, %f",angle[0],angle[1],angle[2],msg.motor_4);
     motor_commands_pub.publish(msg);
 }
