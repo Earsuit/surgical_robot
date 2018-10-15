@@ -45,7 +45,7 @@ int main(int argc,char** argv){
         msg.joystick_1_press = (gpio.pinLevel(13) == LOW);
         msg.joystick_2_press = (gpio.pinLevel(19) == LOW);
 
-        ROS_INFO("Joystick reading: %d, %d, %d, %d.",msg.joystick_1_x,msg.joystick_1_y,msg.joystick_2_x,msg.joystick_2_y);
+        ROS_INFO("Joystick reading: %d, %d, %d, %d, %d, %d.",msg.joystick_1_x,msg.joystick_1_y,msg.joystick_2_x,msg.joystick_2_y,msg.joystick_1_press,msg.joystick_2_press);
         joystick_reading_pub.publish(msg);
         ros::spinOnce();
         loop_rate.sleep();
