@@ -21,7 +21,7 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
 typedef const boost::function<void(const surgical_robot::joystick_readingConstPtr & )> sub_callback;
 
 int main(int argc, char** argv){
-    ros::init(argc,argv,"inverse_kinematics");
+    ros::init(argc,argv,"openloop");
     ros::NodeHandle n;
 
     // Create the instance of publisher and msg
