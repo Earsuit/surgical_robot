@@ -39,7 +39,7 @@ int main(int argc, char** argv){
 }
 
 void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle, int* middleValue,const surgical_robot::joystick_readingConstPtr & joystick){
-    ROS_INFO("Joystick reading received: %d, %d, %d, %d, %d, %d.",msg.joystick_1_x,msg.joystick_1_y,msg.joystick_2_x,msg.joystick_2_y,msg.joystick_1_press,msg.joystick_2_press);
+    ROS_INFO("Joystick reading received: %d, %d, %d, %d, %d, %d", joystick->joystick_1_x,joystick->joystick_1_y,joystick->joystick_2_x,joystick->joystick_2_y,joystick->joystick_1_press,joystick->joystick_2_press);
     float x1 = joystick->joystick_1_x;
     float y1 = joystick->joystick_1_y;
     float x2 = joystick->joystick_2_x;
