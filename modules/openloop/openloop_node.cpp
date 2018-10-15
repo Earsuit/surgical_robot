@@ -39,15 +39,15 @@ int main(int argc, char** argv){
 
 void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle,const surgical_robot::joystick_readingConstPtr & joystick){
     ROS_INFO("Joystick reading received: %d, %d, %d, %d", joystick->joystick_1_x,joystick->joystick_1_y,joystick->joystick_2_x,joystick->joystick_2_y);
-    x1 = joystick->joystick_1_x;
-    y1 = joystick->joystick_1_y;
-    x2 = joystick->joystick_2_x;
-    y2 = joystick->joystick_2_y;
+    float x1 = joystick->joystick_1_x;
+    float y1 = joystick->joystick_1_y;
+    float x2 = joystick->joystick_2_x;
+    float y2 = joystick->joystick_2_y;
 
-    x1Diff = (abs(x1 - MIDDLE_1_x)<5) ? 0 : x1 - MIDDLE_1_x;
-    y1Diff = (abs(y1 - MIDDLE_1_y)<5) ? 0 : y1 - MIDDLE_1_y;
-    x2Diff = (abs(x2 - MIDDLE_2_x)<5) ? 0 : x2 - MIDDLE_2_x;
-    y2Diff = (abs(y2 - MIDDLE_2_y)<5) ? 0 : y2 - MIDDLE_2_y; 
+    float x1Diff = (abs(x1 - MIDDLE_1_x)<5) ? 0 : x1 - MIDDLE_1_x;
+    float y1Diff = (abs(y1 - MIDDLE_1_y)<5) ? 0 : y1 - MIDDLE_1_y;
+    float x2Diff = (abs(x2 - MIDDLE_2_x)<5) ? 0 : x2 - MIDDLE_2_x;
+    float y2Diff = (abs(y2 - MIDDLE_2_y)<5) ? 0 : y2 - MIDDLE_2_y; 
     
     angle[0] += ( (x1Diff >= 0) ? x1Diff : -x1Diff ) / SCALE;
     angle[1] += ( (y1Diff >= 0) ? y1Diff : -y1Diff ) / SCALE;
