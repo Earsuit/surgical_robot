@@ -14,7 +14,7 @@
 #define MIDDLE_2_x 523
 #define MIDDLE_2_y 506
 #define SCALE 1000.0
-#define MAX 1023.0
+#define MAX 255.0
 
 void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle, int* middleValue,const surgical_robot::joystick_readingConstPtr &);
 typedef const boost::function<void(const surgical_robot::joystick_readingConstPtr & )> sub_callback;
