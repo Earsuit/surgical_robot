@@ -34,7 +34,7 @@ int main(int argc, char** argv){
     
     //subscriber
     sub_callback sub_callback = boost::bind(subscriberCallback,buffer,atoi(argv[3]),_1);
-    ros::Subscriber motor_command_pub = n.subscribe("motor_command",100,sub_callback);
+    ros::Subscriber motor_command_pub = n.subscribe("motor_commands",100,sub_callback);
 
     ros::spin();
 
