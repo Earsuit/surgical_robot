@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(joystick)
 
 include_directories(Peripherals/include)
-file(GLOB SOURCES "Peripherals/src/*.cpp" "serial_node.cpp")
+file(GLOB SOURCES "Peripherals/src/*.cpp" "joystick_node.cpp")
 
 add_executable(joystick ${SOURCES})
 find_package(glog 0.3.5 REQUIRED)
