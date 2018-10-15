@@ -23,8 +23,10 @@ int main(int argc,char** argv){
 
     GPIO gpio;
     // Only pin 19 is available for input
+    gpio.pinMode(4,INPUT);
     gpio.pinMode(19,INPUT);
     gpio.pull_up_off_down(19,UP);
+    gpio.pull_up_off_down(4,UP);
 
     while (ros::ok()){
         // x1,y1,x2,y2
@@ -41,7 +43,7 @@ int main(int argc,char** argv){
         msg.joystick_1_y = output[1];
         msg.joystick_2_x = output[2];
         msg.joystick_2_y = output[3];
-        msg.joystick_1_press = (gpio.pinLevel(19) == LOW);
+        msg.joystick_1_press = (gpio.pinLevel(4) == LOW);
         msg.joystick_2_press = (gpio.pinLevel(19) == LOW);
 
         ROS_INFO("Joystick reading: %d, %d, %d, %d, %d, %d.",msg.joystick_1_x,msg.joystick_1_y,msg.joystick_2_x,msg.joystick_2_y,msg.joystick_1_press,msg.joystick_2_press);
