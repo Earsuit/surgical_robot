@@ -63,9 +63,9 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     float y2Diff = (abs(y2 - middleValue[3])<5) ? 0 : y2 - middleValue[3]; 
 
     msg.motor_1 = constraint(x1Diff*MAX_10Bit/middleValue[0],MAX_10Bit,-MAX_10Bit);
-    msg.motor_2 = constraint(y1Diff*MAX_10Bit/middleValue[0],MAX_10Bit,-MAX_10Bit);
-    msg.motor_3 = constraint(x2Diff*MAX_10Bit/middleValue[0],MAX_10Bit,-MAX_10Bit);
-    msg.motor_4 = constraint(y2Diff*MAX_8Bit/middleValue[0],MAX_8Bit,-MAX_8Bit);
+    msg.motor_2 = constraint(y1Diff*MAX_10Bit/middleValue[1],MAX_10Bit,-MAX_10Bit);
+    msg.motor_3 = constraint(x2Diff*MAX_10Bit/middleValue[2],MAX_10Bit,-MAX_10Bit);
+    msg.motor_4 = constraint(y2Diff*MAX_8Bit/middleValue[3],MAX_8Bit,-MAX_8Bit);
     
     ROS_INFO("Motor commands (pwm): %f, %f, %f, %f",msg.motor_1,msg.motor_2,msg.motor_3,msg.motor_4);
     motor_commands_pub.publish(msg);

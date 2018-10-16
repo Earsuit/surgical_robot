@@ -19,6 +19,8 @@
 void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle, int* middleValue,const surgical_robot::joystick_readingConstPtr &);
 typedef const boost::function<void(const surgical_robot::joystick_readingConstPtr & )> sub_callback;
 
+float constraint(float u, float upperBound,float lowerBound);
+
 int main(int argc, char** argv){
     ros::init(argc,argv,"openloop");
     ros::NodeHandle n;
@@ -67,11 +69,16 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     msg.motor_1 = angle[0]*M_PI/180;
     msg.motor_2 = angle[1]*M_PI/180;
     msg.motor_3 = angle[2]*M_PI/180;
-    msg.motor_4 = y2Diff*MAX/middleValue[3];
-    if(msg.motor_4 > 255)
-        msg.motor_4 = 255;
-    else if (msg.motor_4 < -255)
-        msg.motor_4 = -255;
+    msg.motor_4 = constraint(y2Diff*MAX_8Bit/middleValue[3],MAX,-MAX);
     ROS_INFO("Motor commands (deg): %f, %f, %f, %f",angle[0],angle[1],angle[2],msg.motor_4);
     motor_commands_pub.publish(msg);
+}
+
+float constraint(float u, float upperBound,float lowerBound){
+    if(u > upperBound)
+        return upperBound;
+    else if (u < lowerBound)
+        return lowerBound;
+    
+    return u;
 }
