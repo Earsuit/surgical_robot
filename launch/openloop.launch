@@ -1,9 +1,9 @@
 <launch>
 
-<node pkg="surgical_robot" name="serial" type="serial_node" args="$(arg baudrate) $(arg port)">
+<node pkg="surgical_robot" name="serial" type="serial_node" args="$(arg baudrate) $(arg port)" />
 
-<node pkg="surgical_robot" name="openloop" type="openloop">
+<node pkg="surgical_robot" name="openloop" type="openloop" />
 
-<node pkg="surgical_robot" name="joystick" type="joystick" args="$(arg looprate)">
+<node pkg="surgical_robot" name="joystick" type="joystick" args="$(arg looprate)" />
 
 </launch>
