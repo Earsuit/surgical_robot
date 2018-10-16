@@ -28,6 +28,6 @@ else
     sleep $1               //延时时长，由执行.sh时给入的第一个参数指定
     echo "end wait for $1 seconds"
     shift
-        echo "now running 'rosrun $@'"
-    roslaunch $@          //调用指定的roslaunch文件，参数由执行.sh时去除第一个给入参数后剩下的所有参数指定
+        echo "now running 'roslaunch $@'"
+    rosrun $@          //调用指定的roslaunch文件，参数由执行.sh时去除第一个给入参数后剩下的所有参数指定
 fi
