@@ -1,0 +1,5 @@
+<launch>
+
+<node pkg="surgical_robot" name="joystick" type="joystick" args="$(arg looprate)" />
+
+</launch>
