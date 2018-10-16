@@ -20,6 +20,8 @@
 void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, int* middleValue,const surgical_robot::joystick_readingConstPtr &);
 typedef const boost::function<void(const surgical_robot::joystick_readingConstPtr & )> sub_callback;
 
+float constraint(float u, float upperBound,float lowerBound);
+
 int main(int argc, char** argv){
     ros::init(argc,argv,"openloop");
     ros::NodeHandle n;
