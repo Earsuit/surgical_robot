@@ -4,9 +4,9 @@
 # 
 # Koen Lekkerkerker
 # Thu 24 Apr 2014 
-#
+# chmod +x timed_roslaunch.sh
 # Use: ./timed_roslaunch.sh [number of seconds to delay] [rospkg] [roslaunch file]
-#
+# 
 
 function showHelp(){
     echo 
