@@ -29,7 +29,7 @@ int main(int argc, char** argv){
         ROS_ERROR("Can not open comport");
         return 0;
     }
-
+    
     uint8_t buffer[TX_BUFFER_SIZE];
     
     //subscriber

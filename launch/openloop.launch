@@ -2,6 +2,8 @@
 
 <node pkg="surgical_robot" name="serial" type="serial_node" args="$(arg baudrate) $(arg port)" />
 
+<node pkg="timed_roslaunch" type="timed_roslaunch.sh" args="1 roscpp_tutorials my_listener.launch" name="timed_roslaunch" output="screen" /
+
 <node pkg="surgical_robot" name="openloop" type="openloop" />
 
 <node pkg="surgical_robot" name="joystick" type="joystick" args="$(arg looprate)" />
