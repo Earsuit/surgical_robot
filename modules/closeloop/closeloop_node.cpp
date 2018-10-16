@@ -14,10 +14,9 @@
 #define MIDDLE_2_x 523
 #define MIDDLE_2_y 506
 #define SCALE 1000.0
-#define MAX_10Bit 1023.0
-#define MAX_8Bit 255.0
+#define MAX 255.0
 
-void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, int* middleValue,const surgical_robot::joystick_readingConstPtr &);
+void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle, int* middleValue,const surgical_robot::joystick_readingConstPtr &);
 typedef const boost::function<void(const surgical_robot::joystick_readingConstPtr & )> sub_callback;
 
 int main(int argc, char** argv){
@@ -28,17 +27,18 @@ int main(int argc, char** argv){
     ros::Publisher motor_commands_pub = n.advertise<surgical_robot::motor_commands>("motor_commands",100);
     surgical_robot::motor_commands msg;
 
-    // Middle value for joysticks
+    // Array to store the angles for motor 1,2,3
+    float angle[3] = {0,0,0};
     int middleValue[4] = {MIDDLE_1_x,MIDDLE_1_y,MIDDLE_2_x,MIDDLE_2_y};
 
-    sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),middleValue,_1);
+    sub_callback sub_callback = boost::bind(subscriberCallback,boost::ref(motor_commands_pub),boost::ref(msg),angle,middleValue,_1);
     ros::Subscriber motor_command_pub = n.subscribe("joystick_reading",1000,sub_callback);
 
     ros::spin();
     return 0;
 }
 
-void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, int* middleValue,const surgical_robot::joystick_readingConstPtr & joystick){
+void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* angle, int* middleValue,const surgical_robot::joystick_readingConstPtr & joystick){
     ROS_INFO("Joystick reading received: %d, %d, %d, %d, %d, %d", joystick->joystick_1_x,joystick->joystick_1_y,joystick->joystick_2_x,joystick->joystick_2_y,joystick->joystick_1_press,joystick->joystick_2_press);
     float x1 = joystick->joystick_1_x;
     float y1 = joystick->joystick_1_y;
@@ -59,19 +59,19 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     float y1Diff = (abs(y1 - middleValue[1])<5) ? 0 : y1 - middleValue[1];
     float x2Diff = (abs(x2 - middleValue[2])<5) ? 0 : x2 - middleValue[2];
     float y2Diff = (abs(y2 - middleValue[3])<5) ? 0 : y2 - middleValue[3]; 
-
-    msg.motor_1 = constraint(x1Diff*MAX_10Bit/middleValue[0],MAX_10Bit,-MAX_10Bit);
-    msg.motor_2 = constraint(y1Diff*MAX_10Bit/middleValue[0],MAX_10Bit,-MAX_10Bit);
-    msg.motor_3 = constraint(x2Diff*MAX_10Bit/middleValue[0],MAX_10Bit,-MAX_10Bit);
-    msg.motor_4 = constraint(y2Diff*MAX_8Bit/middleValue[0],MAX_8Bit,-MAX_8Bit);
     
-    ROS_INFO("Motor commands (pwm): %f, %f, %f, %f",msg.motor_1,msg.motor_2,msg.motor_3,msg.motor_4);
-    motor_commands_pub.publish(msg);
-}
+    angle[0] +=  x1Diff / SCALE;
+    angle[1] +=  y1Diff / SCALE;
+    angle[2] +=  x2Diff / SCALE;
 
-float constraint(float u, float upperBound,float lowerBound){
-    if(u > upperBound)
-        return upperBound;
-    else if (u < lowerBound)
-        return lowerBound;
+    msg.motor_1 = angle[0]*M_PI/180;
+    msg.motor_2 = angle[1]*M_PI/180;
+    msg.motor_3 = angle[2]*M_PI/180;
+    msg.motor_4 = y2Diff*MAX/middleValue[3];
+    if(msg.motor_4 > 255)
+        msg.motor_4 = 255;
+    else if (msg.motor_4 < -255)
+        msg.motor_4 = -255;
+    ROS_INFO("Motor commands (deg): %f, %f, %f, %f",angle[0],angle[1],angle[2],msg.motor_4);
+    motor_commands_pub.publish(msg);
 }
