@@ -15,6 +15,10 @@
 #define L2 0.042
 #define L3 0.03
 #define MAX 255.0
+#define MIDDLE_1_x 527
+#define MIDDLE_1_y 520
+#define MIDDLE_2_x 523
+#define MIDDLE_2_y 506
 
 void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor_commands &msg, float* pos, int* middleValue ,const surgical_robot::joystick_readingConstPtr &);
 typedef const boost::function<void(const surgical_robot::joystick_readingConstPtr & )> sub_callback;
@@ -60,8 +64,8 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     float y2Diff = (abs(y2 - middleValue[3])<5) ? 0 : y2 - middleValue[3]; 
     
     pos[0] += x1Diff / SCALE
-    pos[1] += x2Diff / SCALE
-    pos[2] += x3Diff / SCALE
+    pos[1] += y1Diff / SCALE
+    pos[2] += x2Diff / SCALE
 
     float xd = pos[0];
     float yd = pos[1];
@@ -74,7 +78,7 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     msg.motor_1 = theta1;
     msg.motor_2 = theta2;
     msg.motor_3 = theta3;
-    msg.motor_4 = constraint(y2Diff*MAX_8Bit/middleValue[3],MAX,-MAX);
+    msg.motor_4 = constraint(y2Diff*MAX/middleValue[3],MAX,-MAX);
     ROS_INFO("Motor commands: %f, %f, %f, %f",theta1,theta2,theta3,msg.motor_4);
     motor_commands_pub.publish(msg);
 }
