@@ -76,4 +76,6 @@ float constraint(float u, float upperBound,float lowerBound){
         return upperBound;
     else if (u < lowerBound)
         return lowerBound;
+    
+    return u;
 }
