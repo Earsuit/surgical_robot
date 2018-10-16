@@ -67,9 +67,9 @@ void subscriberCallback(ros::Publisher& motor_commands_pub,surgical_robot::motor
     float x2Diff = (abs(x2 - middleValue[2])<5) ? 0 : x2 - middleValue[2];
     float y2Diff = (abs(y2 - middleValue[3])<5) ? 0 : y2 - middleValue[3]; 
     
-    pos[0] += x1Diff / SCALE
-    pos[1] += y1Diff / SCALE
-    pos[2] += x2Diff / SCALE
+    pos[0] += x1Diff / SCALE;
+    pos[1] += y1Diff / SCALE;
+    pos[2] += x2Diff / SCALE;
 
     float xd = pos[0];
     float yd = pos[1];
