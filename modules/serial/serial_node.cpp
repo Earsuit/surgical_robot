@@ -24,8 +24,8 @@ int main(int argc, char** argv){
     ros::NodeHandle n;
 
     //start serial comunication, eight databits, no parity, one stopbit
-    int baudRate = (argv[2]==NULL)?DEFAULT_BAUDRATE:atoi(argv[2]);
-    if(RS232_OpenComport(atoi(argv[3]),baudRate,"8N1")){
+    int baudRate = (argv[2]==NULL)?DEFAULT_BAUDRATE:atoi(argv[1]);
+    if(RS232_OpenComport(atoi(argv[2]),baudRate,"8N1")){
         ROS_ERROR("Can not open comport");
         return 0;
     }
@@ -33,12 +33,12 @@ int main(int argc, char** argv){
     uint8_t buffer[TX_BUFFER_SIZE];
     
     //subscriber
-    sub_callback sub_callback = boost::bind(subscriberCallback,buffer,atoi(argv[3]),_1);
+    sub_callback sub_callback = boost::bind(subscriberCallback,buffer,atoi(argv[2]),_1);
     ros::Subscriber motor_command_pub = n.subscribe("motor_commands",100,sub_callback);
 
     ros::spin();
 
-    RS232_CloseComport(atoi(argv[3]));
+    RS232_CloseComport(atoi(argv[2]));
 
     return 0;
 }
