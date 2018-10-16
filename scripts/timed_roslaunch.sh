@@ -1,3 +1,13 @@
+#!/bin/bash          
+#
+# Script to delay the launch of a roslaunch file
+# 
+# Koen Lekkerkerker
+# Thu 24 Apr 2014 
+#
+# Use: ./timed_roslaunch.sh [number of seconds to delay] [rospkg] [roslaunch file]
+#
+
 function showHelp(){
     echo 
     echo "This script can delay the launch of a roslaunch file"
@@ -21,13 +31,13 @@ function showHelp(){
     echo '</launch>'
 }
 
-if [ "$1" = "-h" ]; then    //如果第一个参数为“-h”，则显示帮助信息
+if [ "$1" = "-h" ]; then
     showHelp
 else 
     echo "start wait for $1 seconds"
-    sleep $1               //延时时长，由执行.sh时给入的第一个参数指定
+    sleep $1
     echo "end wait for $1 seconds"
     shift
         echo "now running 'roslaunch $@'"
-    rosrun $@          //调用指定的roslaunch文件，参数由执行.sh时去除第一个给入参数后剩下的所有参数指定
+    roslaunch $@
 fi
